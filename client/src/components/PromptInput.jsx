@@ -78,8 +78,8 @@ export default function PromptInput({
       {/* Category selector row for Prompt Generator */}
       <div className="flex items-center justify-between gap-2 mb-2.5 px-2 overflow-x-auto text-[11px]">
         <div className="flex items-center gap-1.5 text-slate-400">
-          <span className="font-semibold text-slate-300">Prompt Ideas:</span>
-          {['any', 'Coding & Architecture', 'Creative & Sci-Fi', 'AI & Logic', 'System Design'].map((cat) => (
+          <span className="font-semibold text-slate-300">Website Prompts:</span>
+          {['any', 'SaaS Landing Page', 'E-Commerce Store', '3D Portfolio', 'Analytics Dashboard', 'Full Website'].map((cat) => (
             <button
               key={cat}
               onClick={() => {
@@ -93,7 +93,7 @@ export default function PromptInput({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              {cat === 'any' ? '✨ Random Spark' : cat}
+              {cat === 'any' ? '✨ Spark Website' : cat}
             </button>
           ))}
         </div>
@@ -120,7 +120,7 @@ export default function PromptInput({
           <button
             onClick={() => handleGeneratePromptClick(activeCategory)}
             disabled={isGeneratingPrompt}
-            title="Generate a dynamic prompt via Gemini"
+            title="Generate a dynamic website creation prompt"
             className="p-2.5 rounded-2xl text-purple-400 hover:text-purple-200 hover:bg-purple-500/10 active:scale-90 transition-all shrink-0 mb-0.5"
           >
             <Wand2 className={`w-5 h-5 ${isGeneratingPrompt ? 'animate-spin text-cyan-300' : ''}`} />
@@ -133,7 +133,7 @@ export default function PromptInput({
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask Gemini or ChatGPT anything, or click 'Generate Prompt' above..."
+            placeholder="Describe any website, landing page, or web app to generate (or click 'Generate Prompt')..."
             className="w-full bg-transparent resize-none border-none outline-none text-slate-100 placeholder-slate-500 text-sm md:text-base leading-relaxed max-h-44 py-2 px-1 focus:ring-0"
           />
 

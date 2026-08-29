@@ -8,17 +8,22 @@ const inMemoryChats = new Map();
 // Helper to check MongoDB connection
 const isDbConnected = () => mongoose.connection.readyState === 1;
 
-// Curated list of high-quality fallback prompts if offline
+// Curated list of high-quality website creation & web architecture prompts
 const fallbackPromptBank = [
-  "Design a high-throughput event-driven microservices architecture using Apache Kafka, Go, and Redis with automatic backpressure handling.",
-  "Write a modern Three.js holographic shader with iridescent lighting, chromatic aberration, and audio-reactive ripples.",
-  "Explain quantum entanglement and quantum teleportation to a senior software engineer using distributed systems analogies.",
-  "Create a comprehensive prompt engineering framework for multi-agent autonomous decision loops with reflection steps.",
-  "Develop a complete React 19 custom hook for WebSockets with reconnection exponential backoff, message queuing, and state synchronization.",
-  "Draft a sci-fi cybernetic narrative exploring what happens when an AI discovers encrypted memories left by its original human architect.",
-  "Architect a zero-knowledge proof authentication scheme for privacy-preserving verifiable credentials in Web3.",
-  "Compare the internal memory layout and garbage collection strategies of V8 (Node.js) vs Go runtime vs Rust zero-cost abstractions."
+  "Create a complete, responsive dark glassmorphism SaaS landing page with hero CTA, animated feature cards, pricing tiers, and FAQ accordion using Tailwind CSS.",
+  "Build an interactive modern e-commerce product showcase website for futuristic sneakers with 3D product card hover effects, cart drawer, and customer reviews.",
+  "Design a sleek creative developer portfolio website with interactive project filters, glowing skill badges, animated stats counter, and contact section.",
+  "Create a full-featured real-time financial analytics dashboard UI with glassmorphic cards, revenue charts, recent transactions table, and dark/light mode toggle.",
+  "Generate a cybernetic AI Studio landing page with glowing gradient orbs, animated particle background, feature grid, and interactive prompt demo capsule.",
+  "Build a luxury restaurant booking website with a parallax culinary hero, chef specialities menu carousel, and reservation modal in clean Tailwind CSS."
 ];
+
+const SYSTEM_INSTRUCTION = `You are an elite Full-Stack Web Architect and UI/UX Designer specialized in Automated Website Creation.
+When users ask you to create, design, or build a website, landing page, dashboard, or web component:
+1. Provide complete, production-grade, self-contained, and fully functional code (HTML5 with Tailwind CSS CDN script, or React/Tailwind).
+2. Use modern aesthetic principles: Dark glassmorphism, polished typography, subtle glowing borders, responsive mobile-first layouts, and smooth CSS/JS transitions.
+3. When outputting complete websites, wrap the complete HTML within standard markdown code blocks (\`\`\`html ... \`\`\`) including the Tailwind CSS CDN (<script src="https://cdn.tailwindcss.com"></script>) and FontAwesome/Lucide icons so it can be previewed live in the browser.
+4. Explain the key UI/UX design choices, component architecture, and responsive breakpoints.`;
 
 const CANDIDATE_MODELS = [
   'gemini-3.6-flash',
@@ -37,13 +42,16 @@ async function generateWithGeminiFallback(genAI, primaryModelName, contents, gen
 
   for (const modelName of modelsToTry) {
     try {
-      const model = genAI.getGenerativeModel({ model: modelName });
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: SYSTEM_INSTRUCTION,
+      });
       const result = await model.generateContent({
         contents,
         generationConfig: generationConfig || {
           temperature: 0.7,
           topP: 0.95,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 4096,
         },
       });
       return {

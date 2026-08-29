@@ -36,26 +36,26 @@ export default function ChatWindow({
   const presetCards = [
     {
       icon: Terminal,
-      title: 'Full-Stack Architecture',
-      desc: 'Design a microservice pipeline with Node.js, MongoDB & Redis caching.',
-      prompt: 'Provide an end-to-end architecture design for a high-scale real-time chat service using Node.js, Express, MongoDB sharding, and WebSockets.',
+      title: 'SaaS AI Landing Page',
+      desc: 'Create dark glassmorphic landing page with pricing & hero CTA.',
+      prompt: 'Create a complete, responsive dark glassmorphism SaaS landing page for an AI agent platform with animated hero CTA, feature grid cards, interactive pricing tiers, and testimonial slider using HTML5 and Tailwind CSS.',
     },
     {
       icon: Sparkles,
-      title: '3D Shader & GSAP',
-      desc: 'Create an interactive Three.js glass sphere with mouse parallax.',
-      prompt: 'Write a complete Three.js code sample with an iridescent glassmorphic sphere, custom vertex shader, and GSAP continuous floating animation.',
+      title: '3D Glass Portfolio',
+      desc: 'Build creative portfolio with glowing skill badges and projects.',
+      prompt: 'Build a full creative developer portfolio website with dark glassmorphism, glowing skill cards, interactive project filter pills, and contact form in Tailwind CSS.',
     },
     {
       icon: Lightbulb,
-      title: 'Quantum Computing Analogy',
-      desc: 'Explain superposition and qubits using concurrent computing concepts.',
-      prompt: 'Explain quantum computing, superposition, and entanglement using software engineering and distributed concurrency analogies.',
+      title: 'E-Commerce Storefront',
+      desc: 'Interactive sneaker showcase with 3D card tilt & cart drawer.',
+      prompt: 'Design a high-end luxury e-commerce product showcase website with sticky glass navigation, 3D product preview cards, customer rating badges, and slide-over cart drawer using Tailwind CSS.',
     },
     {
       icon: Zap,
-      title: 'Generate Creative Spark',
-      desc: 'Click to forge a brand new prompt using the Gemini AI Engine.',
+      title: 'Generate Website Spark',
+      desc: 'Click to forge a brand new website prompt via Gemini AI.',
       isGenerator: true,
     },
   ];
@@ -77,10 +77,10 @@ export default function ChatWindow({
 
           {/* Heading */}
           <h2 className="hero-title text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-3">
-            Where <span className="gemini-gradient-text">Gemini</span> Meets <span className="text-white">ChatGPT</span>
+            Automated <span className="gemini-gradient-text">Website Creation</span> AI
           </h2>
           <p className="hero-title text-sm md:text-base text-slate-400 max-w-xl mb-10 leading-relaxed">
-            Experience next-generation AI intelligence wrapped in 3D glassmorphism, fluid GSAP physics, and real-time MongoDB persistence.
+            Generate full-stack websites, landing pages, and web apps with instant live previews, 3D glassmorphism, and Gemini intelligence.
           </p>
 
           {/* Prompt Presets Row (Single Horizontal Line) */}
