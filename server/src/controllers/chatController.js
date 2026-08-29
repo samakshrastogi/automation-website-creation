@@ -20,12 +20,51 @@ const fallbackPromptBank = [
   "Compare the internal memory layout and garbage collection strategies of V8 (Node.js) vs Go runtime vs Rust zero-cost abstractions."
 ];
 
+const CANDIDATE_MODELS = [
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-3.7-flash',
+  'gemini-flash-latest',
+];
+
+/**
+ * Helper to generate content with automatic model fallback
+ */
+async function generateWithGeminiFallback(genAI, primaryModelName, contents, generationConfig) {
+  // Put primary model first, then unique candidates
+  const modelsToTry = Array.from(new Set([primaryModelName || 'gemini-3.6-flash', ...CANDIDATE_MODELS]));
+  let lastError = null;
+
+  for (const modelName of modelsToTry) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent({
+        contents,
+        generationConfig: generationConfig || {
+          temperature: 0.7,
+          topP: 0.95,
+          maxOutputTokens: 2048,
+        },
+      });
+      return {
+        text: result.response.text(),
+        modelUsed: modelName,
+      };
+    } catch (err) {
+      lastError = err;
+      console.warn(`[Gemini Fallback] Model '${modelName}' failed (${err.message}). Trying next candidate...`);
+    }
+  }
+
+  throw lastError || new Error('All Gemini candidate models failed.');
+}
+
 /**
  * Controller: Generate intelligent chat response using Google Gemini
  */
 export const generateChat = async (req, res) => {
   try {
-    const { message, chatId, model = 'gemini-1.5-flash', history = [] } = req.body;
+    const { message, chatId, model = 'gemini-3.6-flash', history = [] } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({ error: 'Message content is required.' });
@@ -33,11 +72,11 @@ export const generateChat = async (req, res) => {
 
     const apiKey = process.env.GEMINI_API_KEY;
     let aiResponseText = '';
+    let resolvedModel = model || 'gemini-3.6-flash';
 
     if (apiKey && apiKey.trim() !== '' && apiKey !== 'your_gemini_api_key_here') {
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const selectedModel = genAI.getGenerativeModel({ model: model || 'gemini-1.5-flash' });
 
         // Format history for Google Generative AI
         const contents = history.map((msg) => ({
@@ -51,19 +90,12 @@ export const generateChat = async (req, res) => {
           parts: [{ text: message }],
         });
 
-        const result = await selectedModel.generateContent({
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            topP: 0.95,
-            maxOutputTokens: 2048,
-          },
-        });
-
-        aiResponseText = result.response.text();
+        const geminiResult = await generateWithGeminiFallback(genAI, model, contents);
+        aiResponseText = geminiResult.text;
+        resolvedModel = geminiResult.modelUsed;
       } catch (geminiError) {
         console.error('Gemini API Error:', geminiError.message);
-        aiResponseText = `⚠️ **Gemini API Notice:** Unable to reach Gemini API directly (${geminiError.message}).\n\n*Please verify your \`GEMINI_API_KEY\` in \`server/.env\`.* Here is a simulated response:\n\n### Analysis:\nI have processed your query: **"${message}"**.\n\n- **Status:** Integrated and operational\n- **Engine:** Google Gemini Hybrid Engine\n- **Recommendation:** Add your live API key in \`server/.env\` for unfiltered real-time Gemini generation.`;
+        aiResponseText = `⚠️ **Gemini API Notice:** Unable to reach Gemini API directly (${geminiError.message}).\n\n*Please verify your \`GEMINI_API_KEY\` in \`server/.env\`.*`;
       }
     } else {
       // Mock Gemini response when API key is not yet set
@@ -139,18 +171,17 @@ export const generatePromptIdea = async (req, res) => {
     if (apiKey && apiKey.trim() !== '' && apiKey !== 'your_gemini_api_key_here') {
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
         const promptReq = `Generate a single, fascinating, thought-provoking, and deeply engaging prompt or question that a user could ask an AI assistant like Gemini/ChatGPT. 
 Focus on ${category} with a ${tone} vibe. 
 Return ONLY the prompt text itself, no quotes, no conversational preamble. Keep it within 1 to 2 sentences.`;
 
-        const result = await model.generateContent(promptReq);
-        const generatedPrompt = result.response.text().trim().replace(/^["']|["']$/g, '');
+        const geminiResult = await generateWithGeminiFallback(genAI, 'gemini-3.6-flash', [{ role: 'user', parts: [{ text: promptReq }] }]);
+        const generatedPrompt = geminiResult.text.trim().replace(/^["']|["']$/g, '');
 
         return res.status(200).json({
           success: true,
           prompt: generatedPrompt,
+          model: geminiResult.modelUsed,
           source: 'gemini-live',
         });
       } catch (geminiError) {

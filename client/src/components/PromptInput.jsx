@@ -164,7 +164,7 @@ export default function PromptInput({
           </div>
           <div className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-            <span>Gemini 1.5 Active</span>
+            <span>Gemini 3.6 Active</span>
           </div>
         </div>
       </div>

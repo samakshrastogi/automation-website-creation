@@ -47,7 +47,7 @@ export default function ChatMessage({ message, isLast }) {
               <>
                 <span className="text-cyan-300">Gemini Hybrid Engine</span>
                 <span className="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 text-[9px]">
-                  {message.model || 'Gemini 1.5'}
+                  {message.model || 'Gemini 3.6'}
                 </span>
               </>
             )}

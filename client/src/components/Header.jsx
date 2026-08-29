@@ -45,26 +45,26 @@ export default function Header({
         {/* Center: Model Selector */}
         <div className="flex items-center gap-1.5 glass-panel rounded-2xl p-1 px-2 border border-white/10 text-xs shadow-inner">
           <button
-            onClick={() => setSelectedModel('gemini-1.5-flash')}
+            onClick={() => setSelectedModel('gemini-3.6-flash')}
             className={`px-3 py-1.5 rounded-xl font-medium transition-all flex items-center gap-1.5 ${
-              selectedModel === 'gemini-1.5-flash'
+              selectedModel === 'gemini-3.6-flash'
                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
-            <span>Gemini 1.5 Flash</span>
+            <span>Gemini 3.6 Flash</span>
           </button>
           <button
-            onClick={() => setSelectedModel('gemini-1.5-pro')}
+            onClick={() => setSelectedModel('gemini-3.7-flash')}
             className={`px-3 py-1.5 rounded-xl font-medium transition-all hidden sm:flex items-center gap-1.5 ${
-              selectedModel === 'gemini-1.5-pro'
+              selectedModel === 'gemini-3.7-flash'
                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Cpu className="w-3.5 h-3.5 text-purple-300" />
-            <span>Gemini 1.5 Pro</span>
+            <span>Gemini 3.7 Flash</span>
           </button>
         </div>
 

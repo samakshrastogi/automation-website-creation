@@ -23,7 +23,7 @@ export default function App() {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [chats, setChats] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash');
+  const [selectedModel, setSelectedModel] = useState('gemini-3.6-flash');
   const [health, setHealth] = useState(null);
   const [featuresOpen, setFeaturesOpen] = useState(false);
 
