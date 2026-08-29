@@ -94,8 +94,9 @@ NODE_ENV=development
 # Paste your Google Gemini API key here
 GEMINI_API_KEY=your_gemini_api_key_here
 
-# MongoDB Connection String
-MONGODB_URI=mongodb://localhost:27017/gemini_chatgpt_db
+# MongoDB Connection String & Database Name (Controlled via .env)
+MONGODB_URI=mongodb://localhost:27017
+DB_NAME=website_creation
 ```
 
 > **Note**: Even without an API key or MongoDB running, the application will boot seamlessly in demo mode with full UI and 3D functionality so you can test it immediately!
