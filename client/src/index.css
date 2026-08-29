@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #e2e8f0;
+    background-color: #06080c;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+  }
+
+  code, pre {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Glassmorphism custom design tokens */
+.glass-panel {
+  background: rgba(13, 17, 27, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+.glass-card {
+  background: rgba(22, 29, 46, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: rgba(30, 41, 65, 0.7);
+  border-color: rgba(155, 114, 207, 0.4);
+  box-shadow: 0 10px 30px -10px rgba(155, 114, 207, 0.25);
+  transform: translateY(-2px);
+}
+
+.glass-input {
+  background: rgba(15, 20, 32, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.glass-input:focus-within {
+  border-color: rgba(155, 114, 207, 0.6);
+  box-shadow: 0 0 25px -5px rgba(155, 114, 207, 0.3), 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.25s ease;
+}
+
+.glass-pill:hover {
+  background: rgba(155, 114, 207, 0.15);
+  border-color: rgba(155, 114, 207, 0.5);
+  transform: scale(1.02);
+}
+
+/* Aurora & Gemini gradient texts */
+.gemini-gradient-text {
+  background: linear-gradient(135deg, #a855f7 0%, #6366f1 35%, #38bdf8 70%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.aurora-bg {
+  background: radial-gradient(circle at 50% 0%, rgba(120, 80, 240, 0.18) 0%, transparent 60%),
+              radial-gradient(circle at 100% 50%, rgba(0, 242, 254, 0.12) 0%, transparent 50%),
+              radial-gradient(circle at 0% 100%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(155, 114, 207, 0.4);
+}
+
+/* Markdown styling inside chat */
+.prose-gemini {
+  color: #e2e8f0;
+  line-height: 1.7;
+}
+
+.prose-gemini p {
+  margin-bottom: 0.85rem;
+}
+
+.prose-gemini p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-gemini strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.prose-gemini h1, .prose-gemini h2, .prose-gemini h3 {
+  color: #f8fafc;
+  font-weight: 700;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-gemini ul, .prose-gemini ol {
+  padding-left: 1.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.prose-gemini li {
+  margin-bottom: 0.35rem;
+}
+
+.prose-gemini pre {
+  background: rgba(10, 14, 23, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-gemini code:not(pre code) {
+  background: rgba(155, 114, 207, 0.18);
+  color: #e9d5ff;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.375rem;
+  font-size: 0.875em;
+  border: 1px solid rgba(155, 114, 207, 0.25);
+}
+
+.prose-gemini blockquote {
+  border-left: 3px solid #9b72cf;
+  padding-left: 1rem;
+  color: #94a3b8;
+  font-style: italic;
+  margin: 0.75rem 0;
+}
