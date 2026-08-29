@@ -83,8 +83,8 @@ export default function ChatWindow({
             Experience next-generation AI intelligence wrapped in 3D glassmorphism, fluid GSAP physics, and real-time MongoDB persistence.
           </p>
 
-          {/* Prompt Presets Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full max-w-3xl text-left">
+          {/* Prompt Presets Row (Single Horizontal Line) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full max-w-5xl text-left">
             {presetCards.map((card, idx) => {
               const Icon = card.icon;
               return (
@@ -97,22 +97,22 @@ export default function ChatWindow({
                       onSelectPromptPreset(card.prompt);
                     }
                   }}
-                  className="hero-card glass-card p-4 rounded-2xl cursor-pointer group flex flex-col justify-between relative overflow-hidden"
+                  className="hero-card glass-card p-3.5 rounded-xl cursor-pointer group flex flex-col justify-between relative overflow-hidden min-h-[115px] border border-white/10 hover:border-purple-500/40"
                 >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="p-2 rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/20 group-hover:bg-purple-500/20 group-hover:text-cyan-300 transition-colors">
-                      <Icon className="w-4 h-4" />
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-300 border border-purple-500/20 group-hover:bg-purple-500/20 group-hover:text-cyan-300 transition-colors">
+                      <Icon className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-[10px] uppercase font-semibold text-slate-500 group-hover:text-purple-300 transition-colors">
-                      {card.isGenerator ? 'Spark Button' : 'Explore'}
+                    <span className="text-[9px] uppercase font-semibold tracking-wider text-slate-500 group-hover:text-purple-300 transition-colors">
+                      {card.isGenerator ? 'Spark' : 'Explore'}
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-200 group-hover:text-white mb-1 transition-colors">
+                    <h3 className="text-xs font-semibold text-slate-200 group-hover:text-white mb-1 transition-colors leading-tight">
                       {card.title}
                     </h3>
-                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                    <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
                       {card.desc}
                     </p>
                   </div>
