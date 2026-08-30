@@ -253,46 +253,50 @@ export default function ChatMessage({ message, isLast }) {
                     </div>
 
                     {/* Right: Action Buttons */}
-                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap">
                       {/* 1-Click Deploy to Vercel */}
                       <button
                         onClick={() => setDeployVercelOpen(true)}
-                        className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-slate-900/90 hover:bg-slate-800 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
+                        className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold text-white bg-slate-900/90 hover:bg-slate-800 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
                         title="Deploy live to Vercel in 1-click"
                       >
                         <Triangle className="w-3 h-3 fill-cyan-300 text-cyan-300" />
-                        <span>Deploy to Vercel</span>
+                        <span className="hidden sm:inline">Deploy to Vercel</span>
+                        <span className="sm:hidden">Vercel</span>
                       </button>
 
                       {/* 1-Click Push to GitHub */}
                       <button
                         onClick={() => setPushGithubOpen(true)}
-                        className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-slate-900/90 hover:bg-slate-800 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
+                        className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold text-white bg-slate-900/90 hover:bg-slate-800 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
                         title="Push project directly to your GitHub repository"
                       >
                         <Github className="w-3.5 h-3.5 text-cyan-300" />
-                        <span>Push to GitHub</span>
+                        <span className="hidden sm:inline">Push to GitHub</span>
+                        <span className="sm:hidden">GitHub</span>
                       </button>
 
                       {/* 1-Click ZIP Download */}
                       <button
                         onClick={handleDownloadProjectZip}
                         disabled={isExportingZip}
-                        className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 shadow-md shadow-cyan-500/20 active:scale-95 transition-all flex items-center gap-1.5"
+                        className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold text-white bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 shadow-md shadow-cyan-500/20 active:scale-95 transition-all flex items-center gap-1.5"
                         title="Download Complete Zero-Config ZIP Repository"
                       >
                         <Download className="w-3.5 h-3.5 text-white" />
-                        <span>{isExportingZip ? 'Packing...' : 'ZIP'}</span>
+                        <span className="hidden sm:inline">{isExportingZip ? 'Packing...' : 'Download ZIP'}</span>
+                        <span className="sm:hidden">{isExportingZip ? '...' : 'ZIP'}</span>
                       </button>
 
                       {/* Live 3D Studio */}
                       <button
                         onClick={() => setPreviewHtml(getPrimaryCode())}
-                        className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 bg-white/10 hover:bg-cyan-500/10 border border-white/15 hover:border-cyan-400/40 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
+                        className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-semibold text-slate-200 bg-white/10 hover:bg-cyan-500/10 border border-white/15 hover:border-cyan-400/40 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
                         title="Launch Interactive 3D Studio Preview"
                       >
                         <Eye className="w-3.5 h-3.5 text-cyan-300" />
-                        <span>Live Studio</span>
+                        <span className="hidden sm:inline">Live Studio</span>
+                        <span className="sm:hidden">Preview</span>
                       </button>
                     </div>
                   </div>

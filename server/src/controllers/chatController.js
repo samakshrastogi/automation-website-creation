@@ -736,20 +736,33 @@ export const getChatById = async (req, res) => {
 };
 
 /**
- * Controller: Delete a chat
+ * Controller: Permanently delete a chat across all storage layers
  */
 export const deleteChat = async (req, res) => {
   try {
     const { id } = req.params;
-
-    if (isDbConnected() && mongoose.isValidObjectId(id)) {
-      await Chat.findByIdAndDelete(id);
-    } else {
-      inMemoryChats.delete(id);
+    if (!id) {
+      return res.status(400).json({ error: 'Chat ID is required.' });
     }
 
-    return res.status(200).json({ success: true, message: 'Chat deleted successfully' });
+    // 1. Delete from MongoDB database
+    if (isDbConnected()) {
+      if (mongoose.isValidObjectId(id)) {
+        await Chat.findByIdAndDelete(id);
+      }
+      await Chat.deleteOne({ _id: id }).catch(() => {});
+    }
+
+    // 2. Delete from in-memory cache
+    inMemoryChats.delete(id);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Conversation permanently deleted.',
+      deletedId: id,
+    });
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to delete chat', details: error.message });
+    console.error('Delete chat error:', error);
+    return res.status(500).json({ error: 'Failed to permanently delete chat', details: error.message });
   }
 };

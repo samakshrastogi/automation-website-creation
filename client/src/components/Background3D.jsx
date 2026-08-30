@@ -13,22 +13,32 @@ export default function Background3D({ isGenerating = false }) {
     const currentMount = mountRef.current;
     if (!currentMount) return;
 
+    const getDimensions = () => {
+      const rect = currentMount.getBoundingClientRect();
+      return {
+        width: rect.width || window.innerWidth,
+        height: rect.height || window.innerHeight,
+      };
+    };
+
+    const { width: initialWidth, height: initialHeight } = getDimensions();
+
     // Three.js Scene, Camera, Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       60,
-      window.innerWidth / window.innerHeight,
+      initialWidth / initialHeight,
       0.1,
       1000
     );
     camera.position.z = 85;
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(initialWidth, initialHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     currentMount.appendChild(renderer.domElement);
 
-    // 1. Particle Sphere (Gemini Nebula core)
+    // 1. Particle Sphere (NexusForge core)
     const particleCount = 1800;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
@@ -97,27 +107,37 @@ export default function Background3D({ isGenerating = false }) {
     const icoMesh = new THREE.Mesh(icoGeometry, icoMaterial);
     scene.add(icoMesh);
 
-    // Mouse Interaction
+    // Mouse Interaction relative to container center
     let mouseX = 0;
     let mouseY = 0;
     let targetMouseX = 0;
     let targetMouseY = 0;
 
     const handleMouseMove = (event) => {
-      targetMouseX = (event.clientX - window.innerWidth / 2) * 0.0005;
-      targetMouseY = (event.clientY - window.innerHeight / 2) * 0.0005;
+      const rect = currentMount.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      targetMouseX = (event.clientX - centerX) * 0.0005;
+      targetMouseY = (event.clientY - centerY) * 0.0005;
     };
 
     window.addEventListener('mousemove', handleMouseMove);
 
-    // Handle Window Resize
+    // Dynamic Container Resize & Auto-Centering
     const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      if (!currentMount) return;
+      const { width, height } = getDimensions();
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(width, height);
     };
 
     window.addEventListener('resize', handleResize);
+
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
+    resizeObserver.observe(currentMount);
 
     // Animation Loop
     let animationFrameId;
@@ -155,6 +175,7 @@ export default function Background3D({ isGenerating = false }) {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       if (currentMount && renderer.domElement) {
         currentMount.removeChild(renderer.domElement);
       }
@@ -170,7 +191,7 @@ export default function Background3D({ isGenerating = false }) {
   return (
     <div
       ref={mountRef}
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+      className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
       aria-hidden="true"
     />
   );

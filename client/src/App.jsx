@@ -114,16 +114,25 @@ export default function App() {
     setInputPrompt('');
   };
 
-  // Delete chat thread
+  // Permanently delete chat thread
   const handleDeleteChat = async (chatId) => {
+    if (!chatId) return;
+
+    // 1. Optimistically purge from sidebar state immediately
+    setChats((prev) => prev.filter((c) => c._id !== chatId));
+
+    // 2. If user is currently inside the deleted conversation, reset to fresh state
+    if (currentChatId === chatId) {
+      handleNewChat();
+    }
+
     try {
+      // 3. Permanently delete from server (MongoDB + In-Memory)
       await removeChatThread(chatId);
-      setChats((prev) => prev.filter((c) => c._id !== chatId));
-      if (currentChatId === chatId) {
-        handleNewChat();
-      }
     } catch (err) {
-      console.error('Failed to delete chat:', err);
+      console.error('Failed to permanently delete chat:', err);
+      // Resync in case of error
+      loadChats();
     }
   };
 
@@ -191,9 +200,6 @@ export default function App() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden flex bg-gemini-darker text-slate-100 aurora-bg">
-      {/* 3D Background Canvas */}
-      <Background3D isGenerating={isGenerating} />
-
       {/* Sidebar for History */}
       <Sidebar
         isOpen={sidebarOpen}
@@ -207,10 +213,15 @@ export default function App() {
         onOpenGitHub={() => setGithubModalOpen(true)}
         vercelUser={vercelUser}
         onOpenVercel={() => setVercelModalOpen(true)}
+        onGeneratePromptIdea={handleGeneratePromptIdea}
+        selectedModel={selectedModel}
       />
 
       {/* Main Chat Interface */}
       <div className="relative z-10 flex-1 flex flex-col h-full overflow-hidden">
+        {/* 3D Background Canvas (Auto-centered in remaining space) */}
+        <Background3D isGenerating={isGenerating} />
+
         {/* Top Header */}
         <Header
           sidebarOpen={sidebarOpen}

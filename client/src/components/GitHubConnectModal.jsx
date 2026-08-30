@@ -74,8 +74,8 @@ export default function GitHubConnectModal({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="glass-panel w-full max-w-md rounded-3xl p-6 md:p-8 border border-white/15 shadow-2xl relative">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md">
+      <div className="glass-panel w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-6 md:p-8 border border-white/15 shadow-2xl relative">
         {/* Close Button */}
         <button
           onClick={onClose}

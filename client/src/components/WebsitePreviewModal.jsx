@@ -179,35 +179,38 @@ export default function WebsitePreviewModal({
                 {/* 1-Click Deploy to Vercel */}
                 <button
                   onClick={() => setDeployVercelOpen(true)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 bg-white/10 hover:bg-white/15 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 transition-all active:scale-95 ml-1"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 bg-white/10 hover:bg-white/15 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 transition-all active:scale-95 ml-1"
                   title="Deploy Live Website to Vercel in 1-Click"
                 >
                   <Triangle className="w-3 h-3 fill-cyan-300 text-cyan-300" />
-                  <span>Deploy to Vercel</span>
+                  <span className="hidden md:inline">Deploy to Vercel</span>
+                  <span className="md:hidden">Vercel</span>
                 </button>
 
                 {/* 1-Click Push to GitHub */}
                 <button
                   onClick={() => setPushGithubOpen(true)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 bg-white/10 hover:bg-white/15 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 transition-all active:scale-95"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 bg-white/10 hover:bg-white/15 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 transition-all active:scale-95"
                   title="Push Directly to GitHub Repository"
                 >
                   <Github className="w-3.5 h-3.5 text-cyan-300" />
-                  <span>Push to GitHub</span>
+                  <span className="hidden md:inline">Push to GitHub</span>
+                  <span className="md:hidden">GitHub</span>
                 </button>
 
                 {/* Export Download ZIP Project */}
                 <button
                   onClick={handleExportReactZip}
                   disabled={isExportingZip}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 shadow-md shadow-purple-500/20 flex items-center gap-1.5 transition-all active:scale-95"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 shadow-md shadow-purple-500/20 flex items-center gap-1.5 transition-all active:scale-95"
                   title="Export Full React 18 + Vite + Tailwind Project (.ZIP)"
                 >
                   <FolderArchive className="w-3.5 h-3.5" />
-                  <span>{isExportingZip ? 'Packing...' : 'Download ZIP'}</span>
+                  <span className="hidden sm:inline">{isExportingZip ? 'Packing...' : 'Download ZIP'}</span>
+                  <span className="sm:hidden">{isExportingZip ? '...' : 'ZIP'}</span>
                 </button>
 
-                <div className="w-[1px] h-5 bg-white/10 mx-1" />
+                <div className="w-[1px] h-5 bg-white/10 mx-0.5 sm:mx-1" />
                 
                 {/* Close Button */}
                 <button

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Sparkles, Send, Wand2, RefreshCw, Layers, CornerDownLeft } from 'lucide-react';
+import { Sparkles, Send, Wand2, RefreshCw } from 'lucide-react';
 import gsap from 'gsap';
 import confetti from 'canvas-confetti';
 
@@ -26,7 +26,6 @@ export default function PromptInput({
 
   // GSAP animation when Prompt is generated
   const handleGeneratePromptClick = async (category = activeCategory) => {
-    // 1. GSAP button animation
     if (sparkleBtnRef.current) {
       gsap.to(sparkleBtnRef.current, {
         scale: 0.92,
@@ -42,7 +41,6 @@ export default function PromptInput({
       });
     }
 
-    // 2. Trigger Confetti particles
     confetti({
       particleCount: 25,
       spread: 60,
@@ -51,10 +49,8 @@ export default function PromptInput({
       disableForReducedMotion: true,
     });
 
-    // 3. Call backend prompt generator
     const newPrompt = await onGeneratePromptIdea(category);
 
-    // 4. GSAP highlight flash on input container
     if (containerRef.current && newPrompt) {
       gsap.fromTo(
         containerRef.current,
@@ -74,11 +70,11 @@ export default function PromptInput({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 pb-6 pt-2">
+    <div className="w-full max-w-4xl mx-auto px-2 sm:px-4 pb-3 sm:pb-6 pt-1 sm:pt-2">
       {/* Category selector row for Prompt Generator */}
-      <div className="flex items-center justify-between gap-2 mb-2.5 px-2 overflow-x-auto text-[11px]">
-        <div className="flex items-center gap-1.5 text-slate-400">
-          <span className="font-semibold text-slate-300">Website Prompts:</span>
+      <div className="flex items-center justify-between gap-2 mb-2 px-1 sm:px-2 overflow-x-auto text-[10px] sm:text-[11px] no-scrollbar">
+        <div className="flex items-center gap-1 sm:gap-1.5 text-slate-400 shrink-0">
+          <span className="font-semibold text-slate-300 hidden sm:inline">Website Prompts:</span>
           {['any', 'Multi-Page SaaS', '3D E-Commerce', 'Creative Agency', 'Fintech App', 'Full Web Suite'].map((cat) => (
             <button
               key={cat}
@@ -87,7 +83,7 @@ export default function PromptInput({
                 handleGeneratePromptClick(cat);
               }}
               disabled={isGeneratingPrompt}
-              className={`px-2.5 py-1 rounded-full glass-pill whitespace-nowrap transition-all ${
+              className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full glass-pill whitespace-nowrap transition-all ${
                 activeCategory === cat
                   ? 'bg-purple-500/25 border-purple-500/50 text-purple-200 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -103,27 +99,27 @@ export default function PromptInput({
           ref={sparkleBtnRef}
           onClick={() => handleGeneratePromptClick(activeCategory)}
           disabled={isGeneratingPrompt}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full font-medium text-[11px] text-white bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md shadow-purple-500/20 active:scale-95 transition-all shrink-0"
+          className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full font-medium text-[10px] sm:text-[11px] text-white bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md shadow-purple-500/20 active:scale-95 transition-all shrink-0 ml-auto"
         >
-          <Sparkles className={`w-3.5 h-3.5 sparkle-icon text-cyan-200 ${isGeneratingPrompt ? 'animate-spin' : ''}`} />
-          <span>{isGeneratingPrompt ? 'Forging Prompt...' : 'Generate Prompt'}</span>
+          <Sparkles className={`w-3 h-3 sm:w-3.5 sm:h-3.5 sparkle-icon text-cyan-200 ${isGeneratingPrompt ? 'animate-spin' : ''}`} />
+          <span>{isGeneratingPrompt ? 'Forging...' : 'Generate Prompt'}</span>
         </button>
       </div>
 
       {/* Main Glassmorphic Capsule Input */}
       <div
         ref={containerRef}
-        className="glass-input rounded-3xl p-2 md:p-3 relative transition-all duration-300"
+        className="glass-input rounded-2xl sm:rounded-3xl p-1.5 sm:p-2.5 md:p-3 relative transition-all duration-300 shadow-xl"
       >
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-1.5 sm:gap-2">
           {/* Sparkle Action Trigger inside input */}
           <button
             onClick={() => handleGeneratePromptClick(activeCategory)}
             disabled={isGeneratingPrompt}
             title="Generate a dynamic website creation prompt"
-            className="p-2.5 rounded-2xl text-purple-400 hover:text-purple-200 hover:bg-purple-500/10 active:scale-90 transition-all shrink-0 mb-0.5"
+            className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-purple-400 hover:text-purple-200 hover:bg-purple-500/10 active:scale-90 transition-all shrink-0 mb-0.5"
           >
-            <Wand2 className={`w-5 h-5 ${isGeneratingPrompt ? 'animate-spin text-cyan-300' : ''}`} />
+            <Wand2 className={`w-4 h-4 sm:w-5 sm:h-5 ${isGeneratingPrompt ? 'animate-spin text-cyan-300' : ''}`} />
           </button>
 
           {/* Textarea */}
@@ -133,36 +129,36 @@ export default function PromptInput({
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Describe any website, landing page, or web app to generate (or click 'Generate Prompt')..."
-            className="w-full bg-transparent resize-none border-none outline-none text-slate-100 placeholder-slate-500 text-sm md:text-base leading-relaxed max-h-44 py-2 px-1 focus:ring-0"
+            placeholder="Describe any website, landing page, or web app to generate..."
+            className="w-full bg-transparent resize-none border-none outline-none text-slate-100 placeholder-slate-500 text-xs sm:text-sm md:text-base leading-relaxed max-h-44 py-1.5 sm:py-2 px-1 focus:ring-0"
           />
 
           {/* Send / Generate button */}
           <button
             onClick={onSubmit}
             disabled={!inputPrompt.trim() || isGenerating}
-            className={`p-3 rounded-2xl shrink-0 transition-all duration-200 flex items-center justify-center ${
+            className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shrink-0 transition-all duration-200 flex items-center justify-center ${
               inputPrompt.trim() && !isGenerating
                 ? 'bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-purple-500/30 hover:scale-105 active:scale-95'
                 : 'bg-white/5 text-slate-600 cursor-not-allowed'
             }`}
           >
             {isGenerating ? (
-              <RefreshCw className="w-5 h-5 animate-spin text-purple-300" />
+              <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-purple-300" />
             ) : (
-              <Send className="w-5 h-5 text-white" />
+              <Send className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             )}
           </button>
         </div>
 
         {/* Input Footer Helper */}
-        <div className="flex items-center justify-between px-3 pt-2 text-[10px] text-slate-500 border-t border-white/5 mt-1.5">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-2 sm:px-3 pt-1.5 sm:pt-2 text-[9px] sm:text-[10px] text-slate-500 border-t border-white/5 mt-1">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <span>Press <kbd className="px-1 py-0.5 rounded bg-white/10 text-slate-300 font-mono">Enter ↵</kbd> to send</span>
-            <span className="hidden sm:inline">•</span>
-            <span className="hidden sm:inline">Shift + Enter for new line</span>
+            <span className="hidden md:inline">•</span>
+            <span className="hidden md:inline">Shift + Enter for new line</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
             <span>System Ready</span>
           </div>
