@@ -1,6 +1,6 @@
 /**
  * Advanced Code Sanitizer & Auto-Healing Engine
- * Parses, repairs truncated code, injects runtime polyfills, Web Audio SFX, and Lucide icons.
+ * Parses, repairs truncated code, injects runtime polyfills, Web Audio SFX, Lucide icons, and visual error diagnostics.
  */
 
 export function sanitizeAndHealCode(rawCode, theme = 'cyber', sfxEnabled = true) {
@@ -45,13 +45,37 @@ function autoRepairTruncatedCode(code, isHtmlDoc) {
   let healed = code;
 
   if (isHtmlDoc) {
+    // If the HTML document contains an unclosed <script type="text/babel"> or <script>
+    if (healed.includes('<script') && !healed.includes('</script>')) {
+      // Balance brackets inside the unclosed script
+      const lastScriptOpen = healed.lastIndexOf('<script');
+      const scriptBody = healed.slice(lastScriptOpen);
+      
+      const openBraces = (scriptBody.match(/\{/g) || []).length;
+      const closeBraces = (scriptBody.match(/\}/g) || []).length;
+      if (openBraces > closeBraces) {
+        healed += '\n' + '}'.repeat(openBraces - closeBraces);
+      }
+
+      const openParens = (scriptBody.match(/\(/g) || []).length;
+      const closeParens = (scriptBody.match(/\)/g) || []).length;
+      if (openParens > closeParens) {
+        healed += '\n' + ')'.repeat(openParens - closeParens) + ';';
+      }
+
+      const openBrackets = (scriptBody.match(/\[/g) || []).length;
+      const closeBrackets = (scriptBody.match(/\]/g) || []).length;
+      if (openBrackets > closeBrackets) {
+        healed += '\n' + ']'.repeat(openBrackets - closeBrackets) + ';';
+      }
+
+      healed += '\n    </script>';
+    }
+
+    if (!healed.includes('</body>')) {
+      healed += '\n</body>';
+    }
     if (!healed.includes('</html>')) {
-      if (healed.includes('<script') && !healed.includes('</script>')) {
-        healed += '\n    </script>';
-      }
-      if (healed.includes('<body') && !healed.includes('</body>')) {
-        healed += '\n</body>';
-      }
       healed += '\n</html>';
     }
     return healed;
@@ -72,6 +96,13 @@ function autoRepairTruncatedCode(code, isHtmlDoc) {
     healed += '\n' + ')'.repeat(missing) + ';';
   }
 
+  const openBrackets = (healed.match(/\[/g) || []).length;
+  const closeBrackets = (healed.match(/\]/g) || []).length;
+  if (openBrackets > closeBrackets) {
+    const missing = openBrackets - closeBrackets;
+    healed += '\n' + ']'.repeat(missing) + ';';
+  }
+
   return healed;
 }
 
@@ -85,7 +116,6 @@ export const THEME_PALETTES = {
     secondary: '#9d00ff',
     accent: '#ff0055',
     bg: '#030508',
-    glow: 'rgba(0, 243, 255, 0.35)',
   },
   purple: {
     name: 'Neon Purple',
@@ -93,7 +123,6 @@ export const THEME_PALETTES = {
     secondary: '#6366f1',
     accent: '#ec4899',
     bg: '#06080c',
-    glow: 'rgba(168, 85, 247, 0.35)',
   },
   emerald: {
     name: 'Emerald Matrix',
@@ -101,7 +130,6 @@ export const THEME_PALETTES = {
     secondary: '#06b6d4',
     accent: '#3b82f6',
     bg: '#020b08',
-    glow: 'rgba(16, 185, 129, 0.35)',
   },
   rose: {
     name: 'Sunset Rose',
@@ -109,7 +137,6 @@ export const THEME_PALETTES = {
     secondary: '#fb923c',
     accent: '#a855f7',
     bg: '#090305',
-    glow: 'rgba(244, 63, 94, 0.35)',
   },
   gold: {
     name: 'Obsidian Gold',
@@ -117,7 +144,6 @@ export const THEME_PALETTES = {
     secondary: '#eab308',
     accent: '#00f3ff',
     bg: '#080602',
-    glow: 'rgba(245, 158, 11, 0.35)',
   },
 };
 
@@ -125,7 +151,7 @@ export const THEME_PALETTES = {
  * Web Audio API futuristic SFX synthesizer code
  */
 const AUDIO_SFX_SCRIPT = `
-  // Web Audio Synthesizer for high-tech click & hover sounds
+  // Web Audio Synthesizer for high-tech click sounds
   (function() {
     let audioCtx = null;
     function getAudioContext() {
@@ -164,7 +190,7 @@ const AUDIO_SFX_SCRIPT = `
 `;
 
 /**
- * Lucide icon proxy script to prevent ReferenceErrors in Babel execution
+ * Universal Lucide Icon Proxy for Babel JSX Execution
  */
 const LUCIDE_ICONS_SCRIPT = `
   const createIcon = (name) => (props = {}) => {
@@ -193,30 +219,49 @@ const LUCIDE_ICONS_SCRIPT = `
 `;
 
 /**
+ * Visual Error Boundary & Diagnostic Banner
+ */
+const ERROR_DIAGNOSTIC_SCRIPT = `
+  window.addEventListener('error', function(e) {
+    console.error('[Sandbox Error]', e);
+    const existing = document.getElementById('sandbox-error-overlay');
+    if (existing) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'sandbox-error-overlay';
+    overlay.style.cssText = 'position:fixed;bottom:20px;left:20px;right:20px;z-index:99999;background:rgba(15,23,42,0.92);border:1px solid rgba(239,68,68,0.5);backdrop-filter:blur(16px);border-radius:16px;padding:16px;color:#f87171;font-family:monospace;font-size:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:between;gap:12px;';
+    overlay.innerHTML = '<div><strong style="color:#fca5a5;display:block;margin-bottom:4px;">⚠️ Live Sandbox Notice:</strong>' + (e.message || 'JavaScript runtime evaluation notice.') + '</div><button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:bold;">Dismiss</button>';
+    document.body.appendChild(overlay);
+  });
+`;
+
+/**
  * Builds clean React standalone bundle for Babel execution
  */
 function buildReactHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
   const palette = THEME_PALETTES[theme] || THEME_PALETTES.cyber;
 
-  // Clean module imports
   let cleanedCode = code
     .replace(/import\s+React\s*,?\s*\{?[^}]*\}?\s*from\s*['"][^'"]+['"];?/g, '')
     .replace(/import\s+[^;]+from\s*['"][^'"]+['"];?/g, '')
     .replace(/export\s+default\s+function\s+/g, 'function ')
     .replace(/export\s+default\s+/g, 'const AppExport = ');
 
-  // Mount script
   const mountScript = `
-    const rootElement = document.getElementById('root');
-    if (rootElement && typeof App !== 'undefined') {
-      const root = ReactDOM.createRoot(rootElement);
-      root.render(React.createElement(App));
-    } else if (rootElement && typeof AppExport !== 'undefined') {
-      const root = ReactDOM.createRoot(rootElement);
-      root.render(React.createElement(AppExport));
-    } else if (rootElement && typeof FullWebsiteApp !== 'undefined') {
-      const root = ReactDOM.createRoot(rootElement);
-      root.render(React.createElement(FullWebsiteApp));
+    try {
+      const rootElement = document.getElementById('root');
+      if (rootElement) {
+        const root = ReactDOM.createRoot(rootElement);
+        if (typeof App !== 'undefined') {
+          root.render(React.createElement(App));
+        } else if (typeof AppExport !== 'undefined') {
+          root.render(React.createElement(AppExport));
+        } else if (typeof FullWebsiteApp !== 'undefined') {
+          root.render(React.createElement(FullWebsiteApp));
+        }
+      }
+    } catch (mountErr) {
+      console.warn('Mount Error:', mountErr);
     }
   `;
 
@@ -262,6 +307,7 @@ function buildReactHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
 <body class="selection:bg-cyan-500 selection:text-black">
   <div id="root"></div>
 
+  <script>${ERROR_DIAGNOSTIC_SCRIPT}</script>
   ${sfxEnabled ? `<script>${AUDIO_SFX_SCRIPT}</script>` : ''}
 
   <script type="text/babel">
@@ -283,10 +329,11 @@ function buildReactHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
 }
 
 /**
- * Enhances existing HTML documents
+ * Enhances existing HTML documents with missing dependencies, icons, audio, and diagnostics
  */
 function enhanceHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
   let html = code;
+
   if (!html.includes('tailwindcss.com')) {
     html = html.replace('<head>', '<head><script src="https://cdn.tailwindcss.com"></script>');
   }
@@ -296,9 +343,15 @@ function enhanceHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
   if (!html.includes('three.min.js')) {
     html = html.replace('<head>', '<head><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>');
   }
-  if (sfxEnabled && !html.includes('playCyberClick')) {
-    html = html.replace('</body>', `<script>${AUDIO_SFX_SCRIPT}</script></body>`);
+
+  // Inject diagnostic and SFX scripts before closing body
+  const injection = `<script>${ERROR_DIAGNOSTIC_SCRIPT}</script>${sfxEnabled ? `<script>${AUDIO_SFX_SCRIPT}</script>` : ''}`;
+  if (html.includes('</body>')) {
+    html = html.replace('</body>', `${injection}</body>`);
+  } else {
+    html += injection;
   }
+
   return html;
 }
 
@@ -321,6 +374,7 @@ function buildPlainHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
 </head>
 <body>
   ${code}
+  <script>${ERROR_DIAGNOSTIC_SCRIPT}</script>
   ${sfxEnabled ? `<script>${AUDIO_SFX_SCRIPT}</script>` : ''}
   <script>
     setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 300);

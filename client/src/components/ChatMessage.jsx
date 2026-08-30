@@ -102,13 +102,17 @@ export default function ChatMessage({ message, isLast }) {
 
                   <button
                     onClick={() => {
-                      // Extract first code block or entire content
-                      const codeMatch = message.content.match(/```(?:jsx|html|tsx|js|javascript)?\s*([\s\S]*?)```/);
-                      setPreviewHtml(codeMatch ? codeMatch[1].trim() : message.content);
+                      const codeBlocks = Array.from(message.content.matchAll(/```(?:jsx|html|tsx|js|javascript)?\s*([\s\S]*?)```/g));
+                      let extractedCode = message.content;
+                      if (codeBlocks.length > 0) {
+                        const largest = codeBlocks.reduce((prev, curr) => (curr[1].length > prev[1].length ? curr : prev));
+                        extractedCode = largest[1].trim();
+                      }
+                      setPreviewHtml(extractedCode);
                     }}
-                    className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 shadow-md shadow-purple-500/20 flex items-center gap-1.5 active:scale-95 transition-all shrink-0"
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 shadow-md shadow-purple-500/20 flex items-center gap-2 active:scale-95 transition-all shrink-0"
                   >
-                    <Eye className="w-3.5 h-3.5" />
+                    <Eye className="w-4 h-4" />
                     <span>Launch Live Preview</span>
                   </button>
                 </div>
