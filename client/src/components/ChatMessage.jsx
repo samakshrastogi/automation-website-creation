@@ -78,20 +78,49 @@ export default function ChatMessage({ message, isLast }) {
 
   // Extract human-readable summary text and completely strip any raw code
   const getCleanSummaryText = () => {
-    // 1. Strip markdown code fences
-    let text = message.content.replace(/```(?:jsx|html|tsx|js|javascript)?\s*[\s\S]*?```/g, '').trim();
+    let text = message.content;
 
-    // 2. Strip raw imports or inline code starts
-    const rawCodeKeywords = ['import React', 'import {', 'export default', '<!DOCTYPE html>', 'const App =', 'function App('];
+    // 1. Strip closed markdown code blocks
+    text = text.replace(/```(?:jsx|html|tsx|js|javascript|css)?[\s\S]*?```/gi, '');
+
+    // 2. Strip unclosed markdown code blocks (e.g. ```jsx to end of content)
+    text = text.replace(/```[\s\S]*$/g, '');
+
+    // 3. Strip from first occurrence of code start keywords
+    const rawCodeKeywords = [
+      'import React',
+      'import {',
+      'import "',
+      "import '",
+      'export default',
+      '<!DOCTYPE html>',
+      '<html',
+      'function App',
+      'const App =',
+      'const { useState',
+      '// --- MOCK DATA',
+      'const PRODUCTS'
+    ];
+    let earliestIdx = -1;
     for (const kw of rawCodeKeywords) {
       const idx = text.indexOf(kw);
-      if (idx !== -1) {
-        text = text.slice(0, idx).trim();
+      if (idx !== -1 && (earliestIdx === -1 || idx < earliestIdx)) {
+        earliestIdx = idx;
       }
     }
+    if (earliestIdx !== -1) {
+      text = text.slice(0, earliestIdx);
+    }
 
-    // 3. Remove residual stray code backticks
-    text = text.replace(/`{1,3}/g, '').trim();
+    // 4. Clean stray backticks, symbols, and language words (jsx, tsx, html, js, javascript, css)
+    text = text.replace(/`+/g, '');
+    text = text.replace(/\b(jsx|tsx|html|javascript|js|css|json)\b/gi, '');
+    text = text.trim();
+
+    // 5. If remaining text is too short or doesn't have real sentence words, ignore it
+    if (text.length < 10 || /^[^a-zA-Z0-9]+$/.test(text)) {
+      return '';
+    }
 
     return text;
   };
@@ -256,7 +285,7 @@ export default function ChatMessage({ message, isLast }) {
         isOpen={Boolean(previewHtml)}
         onClose={() => setPreviewHtml(null)}
         htmlCode={previewHtml}
-        title="Automated Website Preview"
+        title="Project Preview"
       />
     </>
   );

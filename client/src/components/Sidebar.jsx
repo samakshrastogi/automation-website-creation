@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, MessageSquare, Trash2, X, Sparkles, Database, ShieldCheck } from 'lucide-react';
+import { Plus, MessageSquare, Trash2, X, Sparkles } from 'lucide-react';
 
 export default function Sidebar({
   isOpen,
@@ -111,19 +111,6 @@ export default function Sidebar({
                 );
               })
             )}
-          </div>
-
-          {/* Footer info box */}
-          <div className="p-4 border-t border-white/10 shrink-0">
-            <div className="glass-card p-3 rounded-xl">
-              <div className="flex items-center gap-2 mb-1 text-slate-200 text-xs font-semibold">
-                <ShieldCheck className="w-4 h-4 text-cyan-400" />
-                <span>Full-Stack Architecture</span>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                React 18 + Node.js Express API + MongoDB Mongoose backend.
-              </p>
-            </div>
           </div>
         </div>
       </aside>

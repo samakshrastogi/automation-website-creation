@@ -37,7 +37,7 @@ export default function Header({
                   Glassmorphism 3D
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">Full-Stack React + Node.js + MongoDB</p>
+              <p className="text-[11px] text-slate-400 hidden sm:block">AI Website & Application Studio</p>
             </div>
           </div>
         </div>
