@@ -15,10 +15,12 @@ import {
   FolderArchive,
   Layers,
   FileCode,
-  Github
+  Github,
+  Triangle
 } from 'lucide-react';
 import WebsitePreviewModal from './WebsitePreviewModal.jsx';
 import PushToGitHubModal from './PushToGitHubModal.jsx';
+import DeployToVercelModal from './DeployToVercelModal.jsx';
 import { exportReactProjectZip } from '../services/projectPackager.js';
 
 export default function ChatMessage({ message, isLast }) {
@@ -27,6 +29,7 @@ export default function ChatMessage({ message, isLast }) {
   const [previewHtml, setPreviewHtml] = useState(null);
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [pushGithubOpen, setPushGithubOpen] = useState(false);
+  const [deployVercelOpen, setDeployVercelOpen] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -251,10 +254,20 @@ export default function ChatMessage({ message, isLast }) {
 
                     {/* Right: Action Buttons */}
                     <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                      {/* 1-Click Deploy to Vercel */}
+                      <button
+                        onClick={() => setDeployVercelOpen(true)}
+                        className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-slate-900/90 hover:bg-slate-800 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
+                        title="Deploy live to Vercel in 1-click"
+                      >
+                        <Triangle className="w-3 h-3 fill-cyan-300 text-cyan-300" />
+                        <span>Deploy to Vercel</span>
+                      </button>
+
                       {/* 1-Click Push to GitHub */}
                       <button
                         onClick={() => setPushGithubOpen(true)}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900/90 hover:bg-slate-800 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
+                        className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-slate-900/90 hover:bg-slate-800 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
                         title="Push project directly to your GitHub repository"
                       >
                         <Github className="w-3.5 h-3.5 text-cyan-300" />
@@ -265,11 +278,11 @@ export default function ChatMessage({ message, isLast }) {
                       <button
                         onClick={handleDownloadProjectZip}
                         disabled={isExportingZip}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 shadow-md shadow-cyan-500/20 active:scale-95 transition-all flex items-center gap-1.5"
+                        className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 shadow-md shadow-cyan-500/20 active:scale-95 transition-all flex items-center gap-1.5"
                         title="Download Complete Zero-Config ZIP Repository"
                       >
                         <Download className="w-3.5 h-3.5 text-white" />
-                        <span>{isExportingZip ? 'Packing...' : 'Download Project (.ZIP)'}</span>
+                        <span>{isExportingZip ? 'Packing...' : 'ZIP'}</span>
                       </button>
 
                       {/* Live 3D Studio */}
@@ -279,7 +292,7 @@ export default function ChatMessage({ message, isLast }) {
                         title="Launch Interactive 3D Studio Preview"
                       >
                         <Eye className="w-3.5 h-3.5 text-cyan-300" />
-                        <span>Live 3D Studio</span>
+                        <span>Live Studio</span>
                       </button>
                     </div>
                   </div>
@@ -313,6 +326,14 @@ export default function ChatMessage({ message, isLast }) {
         onClose={() => setPushGithubOpen(false)}
         rawCode={getPrimaryCode()}
         defaultRepoName="nexusforge-app"
+      />
+
+      {/* Deploy to Vercel Modal */}
+      <DeployToVercelModal
+        isOpen={deployVercelOpen}
+        onClose={() => setDeployVercelOpen(false)}
+        rawCode={getPrimaryCode()}
+        defaultProjectName="nexusforge-app"
       />
     </>
   );

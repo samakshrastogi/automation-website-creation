@@ -13,11 +13,13 @@ import {
   Volume2,
   VolumeX,
   FolderArchive,
-  Github
+  Github,
+  Triangle
 } from 'lucide-react';
 import { sanitizeAndHealCode } from '../services/codeSanitizer.js';
 import { exportReactProjectZip } from '../services/projectPackager.js';
 import PushToGitHubModal from './PushToGitHubModal.jsx';
+import DeployToVercelModal from './DeployToVercelModal.jsx';
 
 export default function WebsitePreviewModal({
   isOpen,
@@ -33,6 +35,7 @@ export default function WebsitePreviewModal({
   const [key, setKey] = useState(0);
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [pushGithubOpen, setPushGithubOpen] = useState(false);
+  const [deployVercelOpen, setDeployVercelOpen] = useState(false);
   const [sfxEnabled, setSfxEnabled] = useState(true);
 
   const iframeRef = useRef(null);
@@ -173,10 +176,20 @@ export default function WebsitePreviewModal({
                   <ExternalLink className="w-3.5 h-3.5" />
                 </button>
 
+                {/* 1-Click Deploy to Vercel */}
+                <button
+                  onClick={() => setDeployVercelOpen(true)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 bg-white/10 hover:bg-white/15 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 transition-all active:scale-95 ml-1"
+                  title="Deploy Live Website to Vercel in 1-Click"
+                >
+                  <Triangle className="w-3 h-3 fill-cyan-300 text-cyan-300" />
+                  <span>Deploy to Vercel</span>
+                </button>
+
                 {/* 1-Click Push to GitHub */}
                 <button
                   onClick={() => setPushGithubOpen(true)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 bg-white/10 hover:bg-white/15 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 transition-all active:scale-95 ml-1"
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 bg-white/10 hover:bg-white/15 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 transition-all active:scale-95"
                   title="Push Directly to GitHub Repository"
                 >
                   <Github className="w-3.5 h-3.5 text-cyan-300" />
@@ -235,6 +248,14 @@ export default function WebsitePreviewModal({
         defaultRepoName="nexusforge-app"
         githubUser={githubUser}
         onUserUpdate={onUserUpdate}
+      />
+
+      {/* Deploy to Vercel Modal */}
+      <DeployToVercelModal
+        isOpen={deployVercelOpen}
+        onClose={() => setDeployVercelOpen(false)}
+        rawCode={htmlCode}
+        defaultProjectName="nexusforge-app"
       />
     </>
   );

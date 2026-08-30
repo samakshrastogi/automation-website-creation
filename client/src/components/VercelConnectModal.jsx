@@ -2,25 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
-  Github,
+  Triangle,
   CheckCircle2,
   AlertCircle,
   ExternalLink,
   Trash2,
   RefreshCw,
   ShieldCheck,
-  Check
+  ArrowRight
 } from 'lucide-react';
 import {
-  clearGitHubAuth,
-  getBackendGitHubConfig,
-  loginWithOAuthPopup
-} from '../services/githubService.js';
+  clearVercelAuth,
+  getBackendVercelConfig,
+  loginWithVercelOAuthPopup
+} from '../services/vercelService.js';
 
-export default function GitHubConnectModal({
+export default function VercelConnectModal({
   isOpen,
   onClose,
-  githubUser,
+  vercelUser,
   onUserUpdate,
 }) {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -28,10 +28,9 @@ export default function GitHubConnectModal({
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Check OAuth configuration on open
   useEffect(() => {
     if (isOpen) {
-      getBackendGitHubConfig().then((cfg) => setOauthConfig(cfg));
+      getBackendVercelConfig().then((cfg) => setOauthConfig(cfg));
       setErrorMsg('');
       setSuccessMsg('');
     }
@@ -39,37 +38,36 @@ export default function GitHubConnectModal({
 
   if (!isOpen) return null;
 
-  // Direct 1-Click GitHub OAuth Sign-In (Zero Token Input)
-  const handleSignInWithGitHub = async () => {
+  // 1-Click Direct Vercel OAuth Sign-In (Zero Token Input)
+  const handleSignInWithVercel = async () => {
     setErrorMsg('');
     setSuccessMsg('');
 
     if (!oauthConfig?.isConfigured || !oauthConfig?.clientId) {
-      // If OAuth App credentials not yet set in server/.env
-      setErrorMsg('GitHub OAuth App not yet configured. Please set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in server/.env for 1-click login.');
+      setErrorMsg('Vercel OAuth Integration not yet configured. Please set VERCEL_CLIENT_ID and VERCEL_CLIENT_SECRET in server/.env for 1-click login.');
       return;
     }
 
     try {
       setIsLoggingIn(true);
-      const user = await loginWithOAuthPopup(oauthConfig.clientId);
+      const user = await loginWithVercelOAuthPopup(oauthConfig.clientId);
       onUserUpdate(user);
-      setSuccessMsg(`Successfully connected as @${user.login}!`);
+      setSuccessMsg(`Successfully connected to Vercel as @${user.username}!`);
       setTimeout(() => {
         onClose();
         setSuccessMsg('');
       }, 1200);
     } catch (err) {
-      setErrorMsg(err.message || 'GitHub sign-in was cancelled or failed.');
+      setErrorMsg(err.message || 'Vercel sign-in was cancelled or failed.');
     } finally {
       setIsLoggingIn(false);
     }
   };
 
   const handleDisconnect = () => {
-    clearGitHubAuth();
+    clearVercelAuth();
     onUserUpdate(null);
-    setSuccessMsg('GitHub account disconnected.');
+    setSuccessMsg('Vercel account disconnected.');
     setTimeout(() => setSuccessMsg(''), 2000);
   };
 
@@ -87,45 +85,45 @@ export default function GitHubConnectModal({
 
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 p-[1px] shadow-lg shrink-0">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-slate-900 via-indigo-900 to-cyan-500 p-[1px] shadow-lg shrink-0">
             <div className="w-full h-full bg-slate-950 rounded-[15px] flex items-center justify-center">
-              <Github className="w-6 h-6 text-white" />
+              <Triangle className="w-5 h-5 fill-white text-white rotate-0" />
             </div>
           </div>
           <div>
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              GitHub Integration
+              Vercel Integration
             </h2>
             <p className="text-xs text-slate-400">
-              1-click authorization to push repositories directly to your account
+              1-click authorization to deploy live production websites
             </p>
           </div>
         </div>
 
         {/* Connected Profile Card */}
-        {githubUser ? (
+        {vercelUser ? (
           <div className="space-y-4">
             <div className="glass-card rounded-2xl p-4 border border-emerald-500/30 bg-emerald-950/10 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img
-                  src={githubUser.avatarUrl}
-                  alt={githubUser.login}
-                  className="w-12 h-12 rounded-xl border border-white/20 shadow-md"
-                />
+                {vercelUser.avatarUrl ? (
+                  <img
+                    src={vercelUser.avatarUrl}
+                    alt={vercelUser.username}
+                    className="w-12 h-12 rounded-xl border border-white/20 shadow-md"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-slate-800 border border-white/15 flex items-center justify-center text-white font-bold text-lg">
+                    {vercelUser.username[0]?.toUpperCase() || 'V'}
+                  </div>
+                )}
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h3 className="text-sm font-bold text-white">{githubUser.name}</h3>
+                    <h3 className="text-sm font-bold text-white">{vercelUser.name || vercelUser.username}</h3>
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   </div>
-                  <a
-                    href={githubUser.htmlUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-cyan-300 hover:underline flex items-center gap-1 mt-0.5 font-mono"
-                  >
-                    @{githubUser.login}
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                  <p className="text-xs text-slate-400 font-mono">
+                    @{vercelUser.username}
+                  </p>
                 </div>
               </div>
 
@@ -145,38 +143,38 @@ export default function GitHubConnectModal({
 
               <button
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md active:scale-95 transition-all"
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 shadow-md active:scale-95 transition-all"
               >
                 Done
               </button>
             </div>
           </div>
         ) : (
-          /* Sign-In Options: 100% Pure 1-Click Login Only */
+          /* 1-Click Sign In Action (Zero Token Input) */
           <div className="space-y-4">
             <div className="glass-card rounded-2xl p-5 border border-white/10 text-center space-y-4">
               <div className="space-y-1">
-                <h3 className="text-sm font-bold text-white">1-Click GitHub Login</h3>
+                <h3 className="text-sm font-bold text-white">1-Click Vercel Login</h3>
                 <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                  Sign in with your GitHub account. All repository creation permissions are automatically granted upon login.
+                  Sign in with your Vercel account. Deployment permissions are automatically granted upon login.
                 </p>
               </div>
 
               {/* Direct Login Button */}
               <button
-                onClick={handleSignInWithGitHub}
+                onClick={handleSignInWithVercel}
                 disabled={isLoggingIn}
                 className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 hover:from-slate-800 hover:to-slate-700 border border-white/20 hover:border-cyan-400/50 shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2.5"
               >
                 {isLoggingIn ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin text-cyan-300" />
-                    <span>Signing in with GitHub...</span>
+                    <span>Signing in with Vercel...</span>
                   </>
                 ) : (
                   <>
-                    <Github className="w-4 h-4 text-white" />
-                    <span>Sign in with GitHub</span>
+                    <Triangle className="w-3.5 h-3.5 fill-white text-white" />
+                    <span>Sign in with Vercel</span>
                   </>
                 )}
               </button>
@@ -185,7 +183,7 @@ export default function GitHubConnectModal({
             {/* Security Badge */}
             <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Direct GitHub OAuth with automatic repository access</span>
+              <span>Direct Vercel OAuth with live edge deployment access</span>
             </div>
 
             {/* Status Messages */}

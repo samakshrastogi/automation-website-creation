@@ -1,13 +1,11 @@
 import React from 'react';
-import { Sparkles, PanelLeftOpen, Cpu, Zap, Github } from 'lucide-react';
+import { Sparkles, PanelLeftOpen, Cpu, Zap } from 'lucide-react';
 
 export default function Header({
   sidebarOpen,
   setSidebarOpen,
   selectedModel,
   setSelectedModel,
-  githubUser,
-  onOpenGitHub,
 }) {
   return (
     <header className="sticky top-0 z-30 w-full glass-panel border-b border-white/10 px-4 py-3">
@@ -44,9 +42,8 @@ export default function Header({
           </div>
         </div>
 
-        {/* Right side: Model Selector + GitHub Account Button */}
+        {/* Right side: Model Selector */}
         <div className="flex items-center gap-2.5">
-          {/* Model Selector */}
           <div className="flex items-center gap-1.5 glass-panel rounded-2xl p-1 px-2 border border-white/10 text-xs shadow-inner">
             <button
               onClick={() => setSelectedModel('gemini-3.6-flash')}
@@ -71,34 +68,6 @@ export default function Header({
               <span>Turbo Engine (v3.7)</span>
             </button>
           </div>
-
-          {/* GitHub Connection Button */}
-          <button
-            onClick={onOpenGitHub}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all flex items-center gap-2 ${
-              githubUser
-                ? 'glass-card border-emerald-500/30 text-emerald-300 hover:border-emerald-500/50'
-                : 'glass-card border-white/10 text-slate-300 hover:text-white hover:border-cyan-500/30'
-            }`}
-            title={githubUser ? `Connected as @${githubUser.login}` : 'Connect GitHub Account'}
-          >
-            {githubUser ? (
-              <>
-                <img
-                  src={githubUser.avatarUrl}
-                  alt={githubUser.login}
-                  className="w-4 h-4 rounded-full border border-white/20"
-                />
-                <span className="hidden sm:inline font-mono">@{githubUser.login}</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              </>
-            ) : (
-              <>
-                <Github className="w-4 h-4 text-slate-400 hover:text-white" />
-                <span className="hidden sm:inline">Connect GitHub</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
     </header>

@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar.jsx';
 import ChatWindow from './components/ChatWindow.jsx';
 import PromptInput from './components/PromptInput.jsx';
 import GitHubConnectModal from './components/GitHubConnectModal.jsx';
+import VercelConnectModal from './components/VercelConnectModal.jsx';
 import {
   sendChatMessage,
   requestPromptIdea,
@@ -14,6 +15,7 @@ import {
   getSystemHealth,
 } from './services/api.js';
 import { getStoredGitHubUser } from './services/githubService.js';
+import { getStoredVercelUser } from './services/vercelService.js';
 
 export default function App() {
   const [messages, setMessages] = useState([]);
@@ -27,12 +29,47 @@ export default function App() {
   const [health, setHealth] = useState(null);
   const [githubUser, setGithubUser] = useState(getStoredGitHubUser());
   const [githubModalOpen, setGithubModalOpen] = useState(false);
+  const [vercelUser, setVercelUser] = useState(getStoredVercelUser());
+  const [vercelModalOpen, setVercelModalOpen] = useState(false);
 
-  // Initial load: Fetch chat history & system health
+  // Initial load: Fetch chat history & system health & check for GitHub OAuth redirect
   useEffect(() => {
     loadChats();
     checkHealthStatus();
+    handleGitHubOAuthRedirect();
   }, []);
+
+  const handleGitHubOAuthRedirect = async () => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      if (code) {
+        // If opened inside popup window, notify opener window and close
+        if (window.opener) {
+          window.opener.postMessage({ type: 'GITHUB_OAUTH_CODE', code }, window.location.origin);
+          window.close();
+          return;
+        }
+
+        // Direct full-page redirect exchange
+        const res = await fetch('/api/auth/github/oauth-exchange', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.user && data.token) {
+          localStorage.setItem('nexusforge_github_token', data.token);
+          localStorage.setItem('nexusforge_github_user', JSON.stringify(data.user));
+          setGithubUser(data.user);
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (e) {
+      console.warn('OAuth redirect check:', e);
+    }
+  };
 
   const loadChats = async () => {
     try {
@@ -168,6 +205,8 @@ export default function App() {
         onDeleteChat={handleDeleteChat}
         githubUser={githubUser}
         onOpenGitHub={() => setGithubModalOpen(true)}
+        vercelUser={vercelUser}
+        onOpenVercel={() => setVercelModalOpen(true)}
       />
 
       {/* Main Chat Interface */}
@@ -178,8 +217,6 @@ export default function App() {
           setSidebarOpen={setSidebarOpen}
           selectedModel={selectedModel}
           setSelectedModel={setSelectedModel}
-          githubUser={githubUser}
-          onOpenGitHub={() => setGithubModalOpen(true)}
         />
 
         {/* Scrollable Chat View */}
@@ -207,6 +244,14 @@ export default function App() {
         onClose={() => setGithubModalOpen(false)}
         githubUser={githubUser}
         onUserUpdate={setGithubUser}
+      />
+
+      {/* Vercel Account Connect Modal */}
+      <VercelConnectModal
+        isOpen={vercelModalOpen}
+        onClose={() => setVercelModalOpen(false)}
+        vercelUser={vercelUser}
+        onUserUpdate={setVercelUser}
       />
     </div>
   );
