@@ -335,7 +335,7 @@ export default function WebsitePreviewModal({ isOpen, onClose, htmlCode, title =
                   key={key}
                   title="Multi-Page Website Live Sandbox"
                   srcDoc={formattedHtml}
-                  sandbox="allow-scripts allow-modals allow-same-origin allow-forms"
+                  sandbox="allow-scripts allow-modals allow-forms allow-popups"
                   className="w-full flex-1 border-none bg-slate-950"
                 />
               </div>

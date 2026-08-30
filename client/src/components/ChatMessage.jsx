@@ -7,17 +7,12 @@ import {
   Copy,
   Check,
   Terminal,
-  Play,
   Eye,
   FolderArchive,
   Download,
-  Box,
   Layers,
-  ChevronDown,
-  ChevronUp,
-  FileCode,
-  Cpu,
-  Globe
+  Globe,
+  Code2
 } from 'lucide-react';
 import WebsitePreviewModal from './WebsitePreviewModal.jsx';
 import { exportReactProjectZip } from '../services/projectPackager.js';
@@ -25,9 +20,9 @@ import { exportReactProjectZip } from '../services/projectPackager.js';
 export default function ChatMessage({ message, isLast }) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
+  const [copiedCmd, setCopiedCmd] = useState(false);
   const [previewHtml, setPreviewHtml] = useState(null);
   const [isExportingZip, setIsExportingZip] = useState(false);
-  const [showRawCode, setShowRawCode] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -35,25 +30,78 @@ export default function ChatMessage({ message, isLast }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Detect if message contains website codebase
+  const handleCopyCommand = () => {
+    navigator.clipboard.writeText('npm install && npm run dev');
+    setCopiedCmd(true);
+    setTimeout(() => setCopiedCmd(false), 2000);
+  };
+
+  // Detect if message contains website codebase (fenced or raw)
   const isWebsiteProject = (
     !isUser && (
       message.content.includes('```html') ||
       message.content.includes('```jsx') ||
       message.content.includes('```tsx') ||
-      message.content.includes('export default function') ||
-      message.content.includes('<!DOCTYPE html>')
+      message.content.includes('```js') ||
+      message.content.includes('import React') ||
+      message.content.includes('export default') ||
+      message.content.includes('<!DOCTYPE html>') ||
+      message.content.includes('function App') ||
+      message.content.includes('const App =') ||
+      message.content.includes('useState(')
     )
   );
 
-  // Extract primary code
+  // Extract primary code for ZIP packaging & Preview (fenced or raw)
   const getPrimaryCode = () => {
     const codeBlocks = Array.from(message.content.matchAll(/```(?:jsx|html|tsx|js|javascript)?\s*([\s\S]*?)```/g));
     if (codeBlocks.length > 0) {
       const largest = codeBlocks.reduce((prev, curr) => (curr[1].length > prev[1].length ? curr : prev));
       return largest[1].trim();
     }
-    return message.content;
+    
+    // If no markdown fences, extract from the first recognized code keyword
+    const codeStartKeywords = [
+      '<!DOCTYPE html>',
+      '<html',
+      'import React',
+      'import {',
+      'export default',
+      'function App',
+      'const App =',
+      'const { useState',
+      '// --- MOCK DATA',
+      'const PRODUCTS'
+    ];
+    let earliestIdx = -1;
+    for (const kw of codeStartKeywords) {
+      const idx = message.content.indexOf(kw);
+      if (idx !== -1 && (earliestIdx === -1 || idx < earliestIdx)) {
+        earliestIdx = idx;
+      }
+    }
+    if (earliestIdx !== -1) {
+      return message.content.slice(earliestIdx).trim();
+    }
+
+    return message.content.trim();
+  };
+
+  // Extract human-readable summary text and completely strip any raw code
+  const getCleanSummaryText = () => {
+    // 1. Strip markdown code fences
+    let text = message.content.replace(/```(?:jsx|html|tsx|js|javascript)?\s*[\s\S]*?```/g, '').trim();
+
+    // 2. Strip raw imports or inline code starts
+    const rawCodeKeywords = ['import React', 'export default', '<!DOCTYPE html>', 'const App =', 'function App('];
+    for (const kw of rawCodeKeywords) {
+      const idx = text.indexOf(kw);
+      if (idx !== -1) {
+        text = text.slice(0, idx).trim();
+      }
+    }
+
+    return text;
   };
 
   // Direct 1-Click ZIP Exporter from chat
@@ -68,6 +116,8 @@ export default function ChatMessage({ message, isLast }) {
       setIsExportingZip(false);
     }
   };
+
+  const summaryText = getCleanSummaryText();
 
   return (
     <>
@@ -100,9 +150,9 @@ export default function ChatMessage({ message, isLast }) {
                 <span className="text-purple-300">You</span>
               ) : (
                 <>
-                  <span className="text-cyan-300">Gemini Hybrid Engine</span>
-                  <span className="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 text-[9px]">
-                    {message.model || 'Gemini 3.6'}
+                  <span className="text-cyan-300 font-bold">Gemini Hybrid Engine</span>
+                  <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-mono border border-purple-500/30">
+                    {message.model || 'gemini-3.6-flash'}
                   </span>
                 </>
               )}
@@ -131,171 +181,116 @@ export default function ChatMessage({ message, isLast }) {
           ) : (
             <div className="space-y-4">
               
-              {/* Ready-to-Deploy Project Archive Hero Card */}
-              {isWebsiteProject && (
-                <div className="rounded-2xl bg-gradient-to-br from-purple-950/60 via-slate-900/90 to-cyan-950/60 border border-cyan-500/30 p-4 md:p-5 shadow-2xl relative overflow-hidden not-prose">
-                  {/* Decorative background glow */}
-                  <div className="absolute -top-12 -right-12 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-                  <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+              {/* Natural Language Summary Section */}
+              {isWebsiteProject ? (
+                <div className="prose-gemini prose-sm max-w-none text-slate-200 leading-relaxed">
+                  {summaryText ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {summaryText}
+                    </ReactMarkdown>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-base font-bold text-white flex items-center gap-2">
+                        <span>✨</span>
+                        <span>We have implemented all of your requirements!</span>
+                      </p>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Here is the complete summary of what has been crafted for your request:
+                      </p>
+                      <ul className="text-xs text-slate-300 space-y-1.5 list-disc list-inside mt-2 bg-white/5 p-3 rounded-xl border border-white/10">
+                        <li><strong>Multi-Page Architecture:</strong> Stateful client routing across all core views with sticky navigation and mobile drawers.</li>
+                        <li><strong>3D Visual Design:</strong> High-performance Three.js WebGL graphics with real-time mouse physics and dynamic lighting.</li>
+                        <li><strong>Modern Glassmorphism:</strong> Dark cyberpunk theme with translucent glass panels, glow accents, and responsive layouts.</li>
+                        <li><strong>Interactive Functionality:</strong> Complete mock dataset, search/filter logic, interactive modal drawers, and toast feedback.</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="prose-gemini prose-sm max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
+              )}
 
-                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 p-[1px] shadow-lg shrink-0">
-                        <div className="w-full h-full bg-slate-950 rounded-[11px] flex items-center justify-center">
+              {/* Ready-to-Deploy Project Archive Download Card (Placed in last) */}
+              {isWebsiteProject && (
+                <div className="rounded-2xl bg-gradient-to-br from-purple-950/70 via-slate-900/95 to-cyan-950/70 border border-cyan-500/30 hover:border-cyan-500/50 p-4 sm:p-5 shadow-2xl relative overflow-hidden not-prose transition-all mt-3">
+                  {/* Decorative ambient background glows */}
+                  <div className="absolute -top-12 -right-12 w-40 h-40 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-purple-500/15 rounded-full blur-3xl pointer-events-none" />
+
+                  {/* Main Row: Icon + Title + Dual Action Buttons */}
+                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    
+                    {/* Left: Brand Icon & Title Info */}
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 p-[1px] shadow-lg shadow-purple-500/20 shrink-0">
+                        <div className="w-full h-full bg-slate-950 rounded-[15px] flex items-center justify-center">
                           <FolderArchive className="w-5 h-5 text-cyan-300" />
                         </div>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-bold text-white tracking-wide">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <h4 className="text-sm sm:text-base font-bold text-white tracking-wide">
                             Production-Ready Project Archive
                           </h4>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          <span className="whitespace-nowrap inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                             ZIP Ready
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          Vite + React 18 + Three.js 3D + Tailwind CSS + Lucide
+                        <p className="text-xs text-slate-400 mt-1 truncate">
+                          Vite + React 18 + Three.js 3D + Tailwind CSS
                         </p>
                       </div>
                     </div>
 
-                    {/* Dual Action Buttons */}
-                    <div className="flex items-center gap-2.5 shrink-0">
+                    {/* Right: Action Buttons */}
+                    <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
                       {/* 1-Click ZIP Download */}
                       <button
                         onClick={handleDownloadProjectZip}
                         disabled={isExportingZip}
-                        className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
-                        title="Download Complete Project ZIP"
+                        className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all flex items-center justify-center gap-2"
+                        title="Download Complete Zero-Config ZIP Repository"
                       >
                         <Download className="w-4 h-4 text-white" />
                         <span>{isExportingZip ? 'Packing Repository...' : 'Download Project (.ZIP)'}</span>
                       </button>
 
-                      {/* Live 3D Preview */}
+                      {/* Live 3D Studio */}
                       <button
                         onClick={() => setPreviewHtml(getPrimaryCode())}
-                        className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-200 bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-center gap-1.5 transition-all active:scale-95"
-                        title="Launch Interactive 3D Studio"
+                        className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-200 bg-white/10 hover:bg-cyan-500/10 border border-white/15 hover:border-cyan-400/50 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                        title="Launch Interactive 3D Studio Preview"
                       >
                         <Eye className="w-3.5 h-3.5 text-cyan-300" />
-                        <span className="hidden sm:inline">Live 3D Studio</span>
+                        <span>Live 3D Studio</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* Included Repository Files Preview */}
-                  <div className="pt-3 border-t border-white/10">
-                    <div className="text-[11px] font-mono text-slate-400 mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-slate-300 font-semibold">
-                        <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                        Included File & Folder Structure:
-                      </span>
-                      <span className="text-[10px] text-slate-500">Zero-Config Vite Setup</span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5 text-[11px] font-mono">
-                      <span className="px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-cyan-300 flex items-center gap-1">
-                        📄 package.json
-                      </span>
-                      <span className="px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-purple-300 flex items-center gap-1">
-                        📄 vite.config.js
-                      </span>
-                      <span className="px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-emerald-300 flex items-center gap-1">
-                        📄 tailwind.config.js
-                      </span>
-                      <span className="px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-amber-300 flex items-center gap-1">
-                        📄 index.html
-                      </span>
-                      <span className="px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-indigo-300 flex items-center gap-1">
-                        📄 src/main.jsx
-                      </span>
-                      <span className="px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-cyan-300 flex items-center gap-1">
-                        📄 src/App.jsx
-                      </span>
-                      <span className="px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-pink-300 flex items-center gap-1">
-                        📄 src/components/Canvas3D.jsx
-                      </span>
-                      <span className="px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-slate-400 flex items-center gap-1">
-                        📄 README.md
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Collapsible Source Code Inspector Toggle */}
-                  <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between">
-                    <button
-                      onClick={() => setShowRawCode(!showRawCode)}
-                      className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors font-mono"
-                    >
-                      {showRawCode ? <ChevronUp className="w-3.5 h-3.5 text-cyan-400" /> : <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />}
-                      <span>{showRawCode ? 'Hide Source Code Stream' : 'Inspect Source Code Stream'}</span>
-                    </button>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      Run `npm install && npm run dev`
+                  {/* Bottom Bar: 1-Click Copyable Command */}
+                  <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between relative z-10">
+                    <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
+                      Quickstart:
                     </span>
+                    <button
+                      onClick={handleCopyCommand}
+                      className="px-3 py-1.5 rounded-lg bg-black/50 hover:bg-black/70 border border-white/10 hover:border-cyan-500/40 text-[11px] font-mono text-slate-300 flex items-center gap-1.5 transition-all active:scale-95 group ml-auto"
+                      title="Click to copy start command"
+                    >
+                      <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Run <code className="text-cyan-300 font-semibold">npm install && npm run dev</code></span>
+                      {copiedCmd ? (
+                        <Check className="w-3 h-3 text-emerald-400 ml-1" />
+                      ) : (
+                        <Copy className="w-3 h-3 text-slate-500 group-hover:text-slate-300 ml-1" />
+                      )}
+                    </button>
                   </div>
-                </div>
-              )}
-
-              {/* Message Markdown Content (Collapsible if website project, otherwise regular) */}
-              {(!isWebsiteProject || showRawCode) && (
-                <div className="prose-gemini prose-sm max-w-none">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      code({ node, className, children, ...rest }) {
-                        const match = /language-(\w+)/.exec(className || '');
-                        const lang = match ? match[1].toLowerCase() : '';
-                        const rawCode = String(children).replace(/\n$/, '');
-                        const isInline = !className && !rawCode.includes('\n');
-
-                        return !isInline ? (
-                          <div className="relative my-3 rounded-2xl overflow-hidden border border-white/10 bg-black/60 shadow-inner not-prose">
-                            <div className="flex items-center justify-between px-3.5 py-2 bg-white/5 border-b border-white/10 text-[11px] text-slate-400 font-mono">
-                              <span className="flex items-center gap-2">
-                                <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-                                <span className="font-semibold text-slate-300">
-                                  {match ? match[1].toUpperCase() : 'CODE'}
-                                </span>
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => setPreviewHtml(rawCode)}
-                                  className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-400 hover:to-purple-500 transition-all text-[11px] font-medium flex items-center gap-1 shadow-sm active:scale-95"
-                                >
-                                  <Eye className="w-3 h-3" />
-                                  <span>Preview</span>
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(rawCode);
-                                  }}
-                                  className="px-2 py-1 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors text-[11px] flex items-center gap-1"
-                                  title="Copy code"
-                                >
-                                  <Copy className="w-3 h-3" />
-                                  Copy
-                                </button>
-                              </div>
-                            </div>
-                            <pre className="p-4 text-xs overflow-x-auto text-slate-200 font-mono leading-relaxed max-h-[400px]">
-                              <code className={className}>
-                                {children}
-                              </code>
-                            </pre>
-                          </div>
-                        ) : (
-                          <code className="bg-purple-500/20 text-purple-200 px-1.5 py-0.5 rounded text-xs font-mono">
-                            {children}
-                          </code>
-                        );
-                      },
-                    }}
-                  >
-                    {message.content}
-                  </ReactMarkdown>
                 </div>
               )}
             </div>

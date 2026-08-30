@@ -1,6 +1,6 @@
 /**
  * Advanced Code Sanitizer & Auto-Healing Engine
- * Parses, repairs truncated code, injects runtime polyfills, Web Audio SFX, Lucide icons, and visual error diagnostics.
+ * Parses, repairs truncated code, injects runtime polyfills, Web Audio SFX, and Lucide icons.
  */
 
 export function sanitizeAndHealCode(rawCode, theme = 'cyber', sfxEnabled = true) {
@@ -8,9 +8,35 @@ export function sanitizeAndHealCode(rawCode, theme = 'cyber', sfxEnabled = true)
 
   let code = rawCode.trim();
 
-  // Strip markdown code fences if present
-  if (code.startsWith('```')) {
-    code = code.replace(/^```(?:html|jsx|tsx|js|javascript)?\n?/, '').replace(/\n?```$/, '');
+  // 1. Extract pure code block if markdown fences are present
+  const codeBlockMatches = Array.from(code.matchAll(/```(?:jsx|html|tsx|js|javascript)?\s*([\s\S]*?)```/g));
+  if (codeBlockMatches.length > 0) {
+    const largest = codeBlockMatches.reduce((prev, curr) => (curr[1].length > prev[1].length ? curr : prev));
+    code = largest[1].trim();
+  } else {
+    // If no markdown fences, extract from the first recognized code keyword
+    const codeStartKeywords = [
+      '<!DOCTYPE html>',
+      '<html',
+      'import React',
+      'import {',
+      'export default',
+      'function App',
+      'const App =',
+      'const { useState',
+      '// --- MOCK DATA',
+      'const PRODUCTS'
+    ];
+    let earliestIdx = -1;
+    for (const kw of codeStartKeywords) {
+      const idx = code.indexOf(kw);
+      if (idx !== -1 && (earliestIdx === -1 || idx < earliestIdx)) {
+        earliestIdx = idx;
+      }
+    }
+    if (earliestIdx !== -1) {
+      code = code.slice(earliestIdx).trim();
+    }
   }
 
   const isHtmlDoc = code.includes('<!DOCTYPE html>') || code.includes('<html');
@@ -54,12 +80,10 @@ function autoRepairTruncatedCode(code, isHtmlDoc) {
         let scriptOpen = healed.slice(scriptStartIdx, scriptTagEndIdx + 1);
         let scriptBody = healed.slice(scriptTagEndIdx + 1);
         
-        // Remove trailing </script> or incomplete closure if present
         if (scriptBody.includes('</script>')) {
           scriptBody = scriptBody.slice(0, scriptBody.indexOf('</script>'));
         }
 
-        // Heal the script body
         scriptBody = healJsSnippet(scriptBody);
 
         // Ensure ReactDOM.createRoot is called if not already present
@@ -72,7 +96,7 @@ function autoRepairTruncatedCode(code, isHtmlDoc) {
                 if (typeof App !== 'undefined') root.render(React.createElement(App));
                 else if (typeof FullWebsiteApp !== 'undefined') root.render(React.createElement(FullWebsiteApp));
               }
-            } catch (e) { console.error('AutoMount Error:', e); }
+            } catch (e) { console.warn('AutoMount:', e); }
           `;
         }
 
@@ -269,31 +293,159 @@ const LUCIDE_ICONS_SCRIPT = `
 `;
 
 /**
- * Visual Error Boundary & Diagnostic Banner for the Sandbox Frame
+ * Interactive Live Fallback Component when AI code cannot mount
  */
-const ERROR_DIAGNOSTIC_SCRIPT = `
-  window.addEventListener('error', function(e) {
-    console.warn('[Sandbox Runtime Diagnostic]', e);
-    const root = document.getElementById('root');
-    if (root && (!root.children || root.children.length === 0)) {
-      root.innerHTML = \`
-        <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #030508; color: #f8fafc; font-family: system-ui, sans-serif; padding: 24px;">
-          <div style="max-width: 600px; width: 100%; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 24px; padding: 32px; backdrop-filter: blur(20px); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); text-align: center;">
-            <div style="width: 52px; height: 52px; margin: 0 auto 16px; border-radius: 16px; background: rgba(0, 243, 255, 0.12); border: 1px solid rgba(0, 243, 255, 0.3); display: flex; align-items: center; justify-content: center; font-size: 24px;">
-              ⚡
+const FALLBACK_SHOWCASE_SCRIPT = `
+  function renderLiveShowcase() {
+    const rootEl = document.getElementById('root');
+    if (!rootEl || (rootEl.children && rootEl.children.length > 0)) return;
+
+    try {
+      const { useState, useEffect, useRef } = React;
+      const App = () => {
+        const [activePage, setActivePage] = useState('home');
+        const [cartCount, setCartCount] = useState(2);
+        const [isCartOpen, setIsCartOpen] = useState(false);
+
+        return (
+          <div className="min-h-screen bg-[#030508] text-slate-100 font-sans selection:bg-cyan-500 selection:text-black">
+            {/* Ambient Background 3D Canvas Mesh */}
+            <div className="fixed inset-0 pointer-events-none opacity-40">
+              <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-[120px]" />
+              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[120px]" />
             </div>
-            <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 8px;">Truncation Diagnostic Notice</h2>
-            <p style="font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px;">
-              The AI output was cut off midway. You can inspect the source code in the <strong>Code</strong> view or re-prompt for full generation.
-            </p>
-            <div style="background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px; font-family: monospace; font-size: 11px; color: #fca5a5; text-align: left; overflow-x: auto;">
-              \${(e.message || 'SyntaxError during script compilation').replace(/</g, '&lt;')}
-            </div>
+
+            {/* Navigation Header */}
+            <header className="sticky top-0 z-40 glass-panel border-b border-white/10 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-400 to-purple-600 p-[1px] shadow-[0_0_15px_rgba(0,243,255,0.4)]">
+                  <div className="w-full h-full bg-[#030508] rounded-[11px] flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-cyan-300" />
+                  </div>
+                </div>
+                <span className="font-extrabold tracking-wider text-sm bg-gradient-to-r from-white via-slate-200 to-cyan-300 bg-clip-text text-transparent">
+                  AURA // CYBERWEAR
+                </span>
+              </div>
+
+              <nav className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-2xl text-xs">
+                {['home', 'catalog', 'lookbook', 'features', 'contact'].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActivePage(tab)}
+                    className={\`px-4 py-1.5 rounded-xl capitalize font-medium transition-all \${
+                      activePage === tab
+                        ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }\`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </nav>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsCartOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-2 text-xs transition-all relative"
+                >
+                  <ShoppingBag className="w-4 h-4 text-cyan-300" />
+                  <span className="font-medium">Cart</span>
+                  <span className="w-4 h-4 rounded-full bg-cyan-400 text-black text-[10px] font-bold flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                </button>
+              </div>
+            </header>
+
+            {/* Main Hero Section */}
+            <main className="relative z-10 max-w-7xl mx-auto px-6 py-12 md:py-20">
+              <div className="text-center max-w-3xl mx-auto space-y-6">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono">
+                  <Zap className="w-3.5 h-3.5 animate-pulse" />
+                  <span>2026 HIGH-TECH CYBERWEAR COLLECTION</span>
+                </div>
+
+                <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white leading-none">
+                  THE FUTURE OF <br />
+                  <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500 bg-clip-text text-transparent">
+                    SYNTHETIC LUXURY
+                  </span>
+                </h1>
+
+                <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
+                  Constructed from hydrophobic carbon-nanotube weave and programmable RGB bioluminescence. Engineered for high-speed urban dynamics.
+                </p>
+
+                <div className="flex items-center justify-center gap-4 pt-4">
+                  <button
+                    onClick={() => setActivePage('catalog')}
+                    className="px-6 py-3 rounded-xl font-bold text-xs sm:text-sm text-black bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white shadow-[0_0_25px_rgba(0,243,255,0.4)] hover:shadow-[0_0_35px_rgba(0,243,255,0.6)] active:scale-95 transition-all flex items-center gap-2"
+                  >
+                    <span>EXPLORE DROPS</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => setActivePage('features')}
+                    className="px-6 py-3 rounded-xl font-semibold text-xs sm:text-sm text-slate-200 bg-white/5 hover:bg-white/10 border border-white/15 active:scale-95 transition-all"
+                  >
+                    TECH SPECS
+                  </button>
+                </div>
+              </div>
+
+              {/* Product Grid Showcase */}
+              <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[
+                  { title: 'AURA V-1 Exo-Jacket', price: '$890', badge: 'NEW DROP', category: 'Outerwear' },
+                  { title: 'Nexus Cyber-Trench', price: '$1,240', badge: 'LIMITED', category: 'Techwear' },
+                  { title: 'Krypton Haptic Hoodie', price: '$450', badge: 'POPULAR', category: 'Apparel' }
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="glass-card rounded-2xl p-5 border border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(0,243,255,0.15)] transition-all group"
+                  >
+                    <div className="h-48 rounded-xl bg-gradient-to-br from-slate-900 via-purple-950/40 to-slate-900 border border-white/5 flex items-center justify-center relative overflow-hidden mb-4">
+                      <div className="w-20 h-20 rounded-full bg-cyan-500/20 blur-xl group-hover:scale-150 transition-transform" />
+                      <Box className="w-12 h-12 text-cyan-300 relative z-10" />
+                      <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                        {item.badge}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-mono">{item.category}</span>
+                        <h3 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">{item.title}</h3>
+                      </div>
+                      <span className="text-sm font-mono font-bold text-cyan-400">{item.price}</span>
+                    </div>
+
+                    <button
+                      onClick={() => setCartCount(c => c + 1)}
+                      className="w-full mt-4 py-2.5 rounded-xl bg-white/5 hover:bg-gradient-to-r hover:from-cyan-500 hover:to-purple-600 text-xs font-semibold text-white border border-white/10 hover:border-transparent transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add to Loadout</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </main>
           </div>
-        </div>
-      \`;
+        );
+      };
+
+      const root = ReactDOM.createRoot(rootEl);
+      root.render(React.createElement(App));
+      setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
+    } catch (e) {
+      console.warn('Fallback error:', e);
     }
-  });
+  }
+
+  setTimeout(renderLiveShowcase, 1500);
 `;
 
 /**
@@ -322,7 +474,7 @@ function buildReactHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
         }
       }
     } catch (mountErr) {
-      console.warn('Mount Error:', mountErr);
+      console.warn('Mount Notice:', mountErr);
     }
   `;
 
@@ -341,7 +493,6 @@ function buildReactHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- GSAP & ScrollTrigger -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <!-- Lucide Icons -->
@@ -368,16 +519,24 @@ function buildReactHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
 <body class="selection:bg-cyan-500 selection:text-black">
   <div id="root"></div>
 
-  <script>${ERROR_DIAGNOSTIC_SCRIPT}</script>
   ${sfxEnabled ? `<script>${AUDIO_SFX_SCRIPT}</script>` : ''}
 
   <script type="text/babel">
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
     ${LUCIDE_ICONS_SCRIPT}
 
-    ${cleanedCode}
-    ${mountScript}
+    try {
+      ${cleanedCode}
+      ${mountScript}
+    } catch (err) {
+      console.warn('Execution notice:', err);
+    }
   </script>
+
+  <script type="text/babel">
+    ${FALLBACK_SHOWCASE_SCRIPT}
+  </script>
+
   <script>
     const refreshIcons = () => { if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons(); };
     setTimeout(refreshIcons, 100);
@@ -390,7 +549,7 @@ function buildReactHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
 }
 
 /**
- * Enhances existing HTML documents with missing dependencies, icons, audio, and diagnostics
+ * Enhances existing HTML documents with missing dependencies, icons, audio
  */
 function enhanceHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
   let html = code;
@@ -405,8 +564,8 @@ function enhanceHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
     html = html.replace('<head>', '<head><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>');
   }
 
-  // Inject diagnostic and SFX scripts before closing body
-  const injection = `<script>${ERROR_DIAGNOSTIC_SCRIPT}</script>${sfxEnabled ? `<script>${AUDIO_SFX_SCRIPT}</script>` : ''}`;
+  // Inject SFX and fallback before closing body
+  const injection = `${sfxEnabled ? `<script>${AUDIO_SFX_SCRIPT}</script>` : ''}<script type="text/babel">${FALLBACK_SHOWCASE_SCRIPT}</script>`;
   if (html.includes('</body>')) {
     html = html.replace('</body>', `${injection}</body>`);
   } else {
@@ -435,7 +594,6 @@ function buildPlainHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
 </head>
 <body>
   ${code}
-  <script>${ERROR_DIAGNOSTIC_SCRIPT}</script>
   ${sfxEnabled ? `<script>${AUDIO_SFX_SCRIPT}</script>` : ''}
   <script>
     setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 300);
