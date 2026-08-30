@@ -202,8 +202,6 @@ export default function App() {
           setSidebarOpen={setSidebarOpen}
           selectedModel={selectedModel}
           setSelectedModel={setSelectedModel}
-          health={health}
-          onOpenFeatures={() => setFeaturesOpen(true)}
         />
 
         {/* Scrollable Chat View */}
@@ -224,12 +222,6 @@ export default function App() {
           isGeneratingPrompt={isGeneratingPrompt}
         />
       </div>
-
-      {/* Features & Architecture Modal */}
-      <FeaturesModal
-        isOpen={featuresOpen}
-        onClose={() => setFeaturesOpen(false)}
-      />
     </div>
   );
 }

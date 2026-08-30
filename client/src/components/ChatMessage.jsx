@@ -171,9 +171,9 @@ export default function ChatMessage({ message, isLast }) {
                 <span className="text-purple-300">You</span>
               ) : (
                 <>
-                  <span className="text-cyan-300 font-bold">Gemini Hybrid Engine</span>
+                  <span className="text-cyan-300 font-bold">AI Web Architect</span>
                   <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-mono border border-purple-500/30">
-                    {message.model || 'gemini-3.6-flash'}
+                    Engine Pro
                   </span>
                 </>
               )}

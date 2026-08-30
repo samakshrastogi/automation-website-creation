@@ -77,10 +77,10 @@ export default function ChatWindow({
 
           {/* Heading */}
           <h2 className="hero-title text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-3">
-            Automated <span className="gemini-gradient-text">Website Creation</span> AI
+            Nexus<span className="gemini-gradient-text">Forge</span> AI Studio
           </h2>
           <p className="hero-title text-sm md:text-base text-slate-400 max-w-xl mb-10 leading-relaxed">
-            Generate full-stack websites, landing pages, and web apps with instant live previews, 3D glassmorphism, and Gemini intelligence.
+            Autonomous 11-section web application synthesis with 3D WebGL physics, instant live sandbox previews, and full ZIP downloads.
           </p>
 
           {/* Prompt Presets Row (Single Horizontal Line) */}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, MessageSquare, Trash2, X, Sparkles } from 'lucide-react';
+import { Plus, MessageSquare, Trash2, PanelLeftClose, Sparkles } from 'lucide-react';
 
 export default function Sidebar({
   isOpen,
@@ -39,10 +39,10 @@ export default function Sidebar({
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-              title="Close Sidebar"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-500/30 border border-transparent transition-all active:scale-95"
+              title="Collapse Sidebar"
             >
-              <X className="w-4 h-4" />
+              <PanelLeftClose className="w-4 h-4" />
             </button>
           </div>
 

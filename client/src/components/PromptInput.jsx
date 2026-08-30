@@ -162,9 +162,9 @@ export default function PromptInput({
             <span className="hidden sm:inline">•</span>
             <span className="hidden sm:inline">Shift + Enter for new line</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-            <span>Gemini 3.6 Active</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span>System Ready</span>
           </div>
         </div>
       </div>
