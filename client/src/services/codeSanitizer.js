@@ -25,7 +25,7 @@ export function sanitizeAndHealCode(rawCode, theme = 'cyber', sfxEnabled = true)
     code.includes('ReactDOM.createRoot')
   );
 
-  // Auto-Repair Truncated JSX / Braces / Tags
+  // Auto-Repair Truncated JSX / Braces / Incomplete lines
   code = autoRepairTruncatedCode(code, isHtmlDoc);
 
   if (isReact && !isHtmlDoc) {
@@ -39,37 +39,20 @@ export function sanitizeAndHealCode(rawCode, theme = 'cyber', sfxEnabled = true)
 }
 
 /**
- * Auto-heals unclosed tags, unclosed brackets, and broken closures
+ * Intelligent auto-healer for truncated code, unclosed quotes, broken expressions, and missing closures
  */
 function autoRepairTruncatedCode(code, isHtmlDoc) {
-  let healed = code;
+  let healed = code.trim();
 
   if (isHtmlDoc) {
     // If the HTML document contains an unclosed <script type="text/babel"> or <script>
     if (healed.includes('<script') && !healed.includes('</script>')) {
-      // Balance brackets inside the unclosed script
       const lastScriptOpen = healed.lastIndexOf('<script');
-      const scriptBody = healed.slice(lastScriptOpen);
-      
-      const openBraces = (scriptBody.match(/\{/g) || []).length;
-      const closeBraces = (scriptBody.match(/\}/g) || []).length;
-      if (openBraces > closeBraces) {
-        healed += '\n' + '}'.repeat(openBraces - closeBraces);
-      }
+      let scriptContent = healed.slice(lastScriptOpen);
 
-      const openParens = (scriptBody.match(/\(/g) || []).length;
-      const closeParens = (scriptBody.match(/\)/g) || []).length;
-      if (openParens > closeParens) {
-        healed += '\n' + ')'.repeat(openParens - closeParens) + ';';
-      }
-
-      const openBrackets = (scriptBody.match(/\[/g) || []).length;
-      const closeBrackets = (scriptBody.match(/\]/g) || []).length;
-      if (openBrackets > closeBrackets) {
-        healed += '\n' + ']'.repeat(openBrackets - closeBrackets) + ';';
-      }
-
-      healed += '\n    </script>';
+      // Heal the script content specifically
+      scriptContent = healJsSnippet(scriptContent);
+      healed = healed.slice(0, lastScriptOpen) + scriptContent + '\n    </script>';
     }
 
     if (!healed.includes('</body>')) {
@@ -81,29 +64,68 @@ function autoRepairTruncatedCode(code, isHtmlDoc) {
     return healed;
   }
 
-  // Check bracket balance for JS/JSX
-  const openBraces = (healed.match(/\{/g) || []).length;
-  const closeBraces = (healed.match(/\}/g) || []).length;
-  if (openBraces > closeBraces) {
-    const missing = openBraces - closeBraces;
-    healed += '\n' + '}'.repeat(missing);
+  // Pure React/JS snippet healing
+  return healJsSnippet(healed);
+}
+
+/**
+ * Heals JavaScript/JSX snippets: cleans dangling commas, closes open quotes, balances brackets
+ */
+function healJsSnippet(jsCode) {
+  let cleaned = jsCode;
+  const lines = cleaned.split('\n');
+  let lastLine = lines[lines.length - 1].trim();
+
+  // 1. Check if last line has an unclosed string literal
+  const singleQuotes = (lastLine.match(/'/g) || []).length;
+  if (singleQuotes % 2 !== 0) {
+    cleaned += "'";
+    lastLine += "'";
+  }
+  const doubleQuotes = (lastLine.match(/"/g) || []).length;
+  if (doubleQuotes % 2 !== 0) {
+    cleaned += '"';
+    lastLine += '"';
   }
 
-  const openParens = (healed.match(/\(/g) || []).length;
-  const closeParens = (healed.match(/\)/g) || []).length;
+  // 2. Clean dangling trailing operators or parameter definitions
+  if (lastLine.endsWith(',')) {
+    // e.g. "const addToCart = (product," or "id: 'drops',"
+    if (lastLine.includes('(') && !lastLine.includes(')')) {
+      cleaned = cleaned.slice(0, cleaned.lastIndexOf(',')) + ') => {};';
+    } else {
+      cleaned = cleaned.slice(0, cleaned.lastIndexOf(',')) + ';';
+    }
+  } else if (lastLine.endsWith('(')) {
+    cleaned += ') => {};';
+  } else if (lastLine.endsWith('=')) {
+    cleaned += ' null;';
+  } else if (lastLine.endsWith(':')) {
+    cleaned += ' "";';
+  } else if (lastLine.endsWith('||') || lastLine.endsWith('&&')) {
+    cleaned += ' false;';
+  }
+
+  // 3. Balance brackets, parentheses, and braces
+  const openParens = (cleaned.match(/\(/g) || []).length;
+  const closeParens = (cleaned.match(/\)/g) || []).length;
   if (openParens > closeParens) {
-    const missing = openParens - closeParens;
-    healed += '\n' + ')'.repeat(missing) + ';';
+    cleaned += '\n' + ')'.repeat(openParens - closeParens) + ';';
   }
 
-  const openBrackets = (healed.match(/\[/g) || []).length;
-  const closeBrackets = (healed.match(/\]/g) || []).length;
+  const openBrackets = (cleaned.match(/\[/g) || []).length;
+  const closeBrackets = (cleaned.match(/\]/g) || []).length;
   if (openBrackets > closeBrackets) {
-    const missing = openBrackets - closeBrackets;
-    healed += '\n' + ']'.repeat(missing) + ';';
+    cleaned += '\n' + ']'.repeat(openBrackets - closeBrackets) + ';';
   }
 
-  return healed;
+  const openBraces = (cleaned.match(/\{/g) || []).length;
+  const closeBraces = (cleaned.match(/\}/g) || []).length;
+  if (openBraces > closeBraces) {
+    cleaned += '\n' + '}'.repeat(openBraces - closeBraces);
+  }
+
+  return cleaned;
 }
 
 /**
@@ -151,7 +173,6 @@ export const THEME_PALETTES = {
  * Web Audio API futuristic SFX synthesizer code
  */
 const AUDIO_SFX_SCRIPT = `
-  // Web Audio Synthesizer for high-tech click sounds
   (function() {
     let audioCtx = null;
     function getAudioContext() {
@@ -219,19 +240,30 @@ const LUCIDE_ICONS_SCRIPT = `
 `;
 
 /**
- * Visual Error Boundary & Diagnostic Banner
+ * Visual Error Boundary & Diagnostic Banner for the Sandbox Frame
  */
 const ERROR_DIAGNOSTIC_SCRIPT = `
   window.addEventListener('error', function(e) {
-    console.error('[Sandbox Error]', e);
-    const existing = document.getElementById('sandbox-error-overlay');
-    if (existing) return;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'sandbox-error-overlay';
-    overlay.style.cssText = 'position:fixed;bottom:20px;left:20px;right:20px;z-index:99999;background:rgba(15,23,42,0.92);border:1px solid rgba(239,68,68,0.5);backdrop-filter:blur(16px);border-radius:16px;padding:16px;color:#f87171;font-family:monospace;font-size:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:between;gap:12px;';
-    overlay.innerHTML = '<div><strong style="color:#fca5a5;display:block;margin-bottom:4px;">⚠️ Live Sandbox Notice:</strong>' + (e.message || 'JavaScript runtime evaluation notice.') + '</div><button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:bold;">Dismiss</button>';
-    document.body.appendChild(overlay);
+    console.warn('[Sandbox Runtime Diagnostic]', e);
+    const root = document.getElementById('root');
+    if (root && (!root.children || root.children.length === 0)) {
+      root.innerHTML = \`
+        <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #030508; color: #f8fafc; font-family: system-ui, sans-serif; padding: 24px;">
+          <div style="max-width: 600px; width: 100%; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 24px; padding: 32px; backdrop-filter: blur(20px); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); text-align: center;">
+            <div style="width: 52px; height: 52px; margin: 0 auto 16px; border-radius: 16px; background: rgba(0, 243, 255, 0.12); border: 1px solid rgba(0, 243, 255, 0.3); display: flex; align-items: center; justify-content: center; font-size: 24px;">
+              ⚡
+            </div>
+            <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 8px;">Truncation Diagnostic Notice</h2>
+            <p style="font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px;">
+              The AI output was cut off midway. You can inspect the source code in the <strong>Code</strong> view or re-prompt for full generation.
+            </p>
+            <div style="background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px; font-family: monospace; font-size: 11px; color: #fca5a5; text-align: left; overflow-x: auto;">
+              \${(e.message || 'SyntaxError during script compilation').replace(/</g, '&lt;')}
+            </div>
+          </div>
+        </div>
+      \`;
+    }
   });
 `;
 
