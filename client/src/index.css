@@ -146,6 +146,11 @@
   margin-bottom: 0.75rem;
 }
 
+.prose-gemini pre:empty,
+.prose-gemini pre:has(code:empty) {
+  display: none !important;
+}
+
 .prose-gemini code:not(pre code) {
   background: rgba(155, 114, 207, 0.18);
   color: #e9d5ff;

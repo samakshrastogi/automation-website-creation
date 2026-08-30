@@ -21,7 +21,7 @@ export default function App() {
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [chats, setChats] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
   const [selectedModel, setSelectedModel] = useState('gemini-3.6-flash');
   const [health, setHealth] = useState(null);
   const [featuresOpen, setFeaturesOpen] = useState(false);

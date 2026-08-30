@@ -95,6 +95,7 @@ function autoRepairTruncatedCode(code, isHtmlDoc) {
                 const root = ReactDOM.createRoot(rootEl);
                 if (typeof App !== 'undefined') root.render(React.createElement(App));
                 else if (typeof FullWebsiteApp !== 'undefined') root.render(React.createElement(FullWebsiteApp));
+                else if (typeof CyberwearApp !== 'undefined') root.render(React.createElement(CyberwearApp));
               }
             } catch (e) { console.warn('AutoMount:', e); }
           `;
@@ -123,14 +124,14 @@ function autoRepairTruncatedCode(code, isHtmlDoc) {
 }
 
 /**
- * Heals JavaScript/JSX snippets: cleans dangling commas, closes open quotes, balances brackets
+ * Heals JavaScript/JSX snippets: cleans dangling commas, closes open quotes, balances brackets & tags
  */
 function healJsSnippet(jsCode) {
-  let cleaned = jsCode;
+  let cleaned = jsCode.trim();
   const lines = cleaned.split('\n');
   let lastLine = lines[lines.length - 1].trim();
 
-  // 1. Check if last line has an unclosed string literal
+  // 1. Check if last line has an unclosed string or template literal
   const singleQuotes = (lastLine.match(/'/g) || []).length;
   if (singleQuotes % 2 !== 0) {
     cleaned += "'";
@@ -141,16 +142,14 @@ function healJsSnippet(jsCode) {
     cleaned += '"';
     lastLine += '"';
   }
+  const backticks = (cleaned.match(/`/g) || []).length;
+  if (backticks % 2 !== 0) {
+    cleaned += '`';
+  }
 
-  // 2. Clean dangling trailing operators or parameter definitions
+  // 2. Clean dangling trailing operators
   if (lastLine.endsWith(',')) {
-    if (lastLine.includes('(') && !lastLine.includes(')')) {
-      cleaned = cleaned.slice(0, cleaned.lastIndexOf(',')) + ') => {};';
-    } else {
-      cleaned = cleaned.slice(0, cleaned.lastIndexOf(',')) + ';';
-    }
-  } else if (lastLine.endsWith('(')) {
-    cleaned += ') => {};';
+    cleaned = cleaned.slice(0, cleaned.lastIndexOf(',')) + ';';
   } else if (lastLine.endsWith('=')) {
     cleaned += ' null;';
   } else if (lastLine.endsWith(':')) {
@@ -159,23 +158,25 @@ function healJsSnippet(jsCode) {
     cleaned += ' false;';
   }
 
-  // 3. Balance brackets, parentheses, and braces
-  const openParens = (cleaned.match(/\(/g) || []).length;
-  const closeParens = (cleaned.match(/\)/g) || []).length;
-  if (openParens > closeParens) {
-    cleaned += '\n' + ')'.repeat(openParens - closeParens) + ';';
+  // 3. Check if inside an unclosed JSX tag e.g. <span className="..."
+  const lastLt = cleaned.lastIndexOf('<');
+  const lastGt = cleaned.lastIndexOf('>');
+  if (lastLt > lastGt) {
+    cleaned += '></span>';
   }
 
-  const openBrackets = (cleaned.match(/\[/g) || []).length;
-  const closeBrackets = (cleaned.match(/\]/g) || []).length;
-  if (openBrackets > closeBrackets) {
-    cleaned += '\n' + ']'.repeat(openBrackets - closeBrackets) + ';';
-  }
-
-  const openBraces = (cleaned.match(/\{/g) || []).length;
-  const closeBraces = (cleaned.match(/\}/g) || []).length;
-  if (openBraces > closeBraces) {
-    cleaned += '\n' + '}'.repeat(openBraces - closeBraces);
+  // 4. Balance open JSX return structures
+  if (cleaned.includes('return (') || cleaned.includes('return(')) {
+    if (!cleaned.includes(');')) {
+      cleaned += '\n          </div>\n        </main>\n      </div>\n    );\n  };\n';
+    }
+  } else {
+    // Balance open curly braces
+    const openBraces = (cleaned.match(/\{/g) || []).length;
+    const closeBraces = (cleaned.match(/\}/g) || []).length;
+    if (openBraces > closeBraces) {
+      cleaned += '\n' + '}'.repeat(openBraces - closeBraces);
+    }
   }
 
   return cleaned;
@@ -293,163 +294,127 @@ const LUCIDE_ICONS_SCRIPT = `
 `;
 
 /**
- * Interactive Live Fallback Component when AI code cannot mount
+ * Pure Vanilla JavaScript Fallback Component (No raw JSX - runs crash-free in standard script tag)
  */
 const FALLBACK_SHOWCASE_SCRIPT = `
-  function renderLiveShowcase() {
+  window.renderLiveShowcase = function() {
     const rootEl = document.getElementById('root');
     if (!rootEl || (rootEl.children && rootEl.children.length > 0)) return;
 
     try {
-      const { useState, useEffect, useRef } = React;
-      const App = () => {
-        const [activePage, setActivePage] = useState('home');
+      const e = React.createElement;
+      const { useState } = React;
+
+      const FallbackApp = () => {
+        const [activeTab, setActiveTab] = useState('home');
         const [cartCount, setCartCount] = useState(2);
-        const [isCartOpen, setIsCartOpen] = useState(false);
 
-        return (
-          <div className="min-h-screen bg-[#030508] text-slate-100 font-sans selection:bg-cyan-500 selection:text-black">
-            {/* Ambient Background 3D Canvas Mesh */}
-            <div className="fixed inset-0 pointer-events-none opacity-40">
-              <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-[120px]" />
-              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[120px]" />
-            </div>
+        return e('div', { className: 'min-h-screen bg-[#030508] text-slate-100 font-sans selection:bg-cyan-500 selection:text-black relative overflow-x-hidden' },
+          // Background Glows
+          e('div', { className: 'fixed inset-0 pointer-events-none opacity-40' },
+            e('div', { className: 'absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-[120px]' }),
+            e('div', { className: 'absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[120px]' })
+          ),
 
-            {/* Navigation Header */}
-            <header className="sticky top-0 z-40 glass-panel border-b border-white/10 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-400 to-purple-600 p-[1px] shadow-[0_0_15px_rgba(0,243,255,0.4)]">
-                  <div className="w-full h-full bg-[#030508] rounded-[11px] flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-cyan-300" />
-                  </div>
-                </div>
-                <span className="font-extrabold tracking-wider text-sm bg-gradient-to-r from-white via-slate-200 to-cyan-300 bg-clip-text text-transparent">
-                  AURA // CYBERWEAR
-                </span>
-              </div>
+          // Header
+          e('header', { className: 'sticky top-0 z-40 glass-panel border-b border-white/10 px-6 py-4 flex items-center justify-between' },
+            e('div', { className: 'flex items-center gap-3' },
+              e('div', { className: 'w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-400 to-purple-600 p-[1px] shadow-[0_0_15px_rgba(0,243,255,0.4)]' },
+                e('div', { className: 'w-full h-full bg-[#030508] rounded-[11px] flex items-center justify-center' },
+                  e(window.Sparkles, { className: 'w-4 h-4 text-cyan-300' })
+                )
+              ),
+              e('span', { className: 'font-extrabold tracking-wider text-sm bg-gradient-to-r from-white via-slate-200 to-cyan-300 bg-clip-text text-transparent' }, 'AURA // CYBERWEAR')
+            ),
+            e('nav', { className: 'hidden md:flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-2xl text-xs' },
+              ['home', 'catalog', 'lookbook', 'features', 'contact'].map(tab =>
+                e('button', {
+                  key: tab,
+                  onClick: () => setActiveTab(tab),
+                  className: 'px-4 py-1.5 rounded-xl capitalize font-medium transition-all ' + (activeTab === tab ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold shadow-md' : 'text-slate-400 hover:text-white')
+                }, tab)
+              )
+            ),
+            e('div', { className: 'flex items-center gap-3' },
+              e('button', {
+                onClick: () => setCartCount(c => c + 1),
+                className: 'px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-2 text-xs transition-all relative'
+              },
+                e(window.ShoppingBag, { className: 'w-4 h-4 text-cyan-300' }),
+                e('span', { className: 'font-medium' }, 'Cart'),
+                e('span', { className: 'w-4 h-4 rounded-full bg-cyan-400 text-black text-[10px] font-bold flex items-center justify-center' }, cartCount)
+              )
+            )
+          ),
 
-              <nav className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-2xl text-xs">
-                {['home', 'catalog', 'lookbook', 'features', 'contact'].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActivePage(tab)}
-                    className={\`px-4 py-1.5 rounded-xl capitalize font-medium transition-all \${
-                      activePage === tab
-                        ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold shadow-md'
-                        : 'text-slate-400 hover:text-white'
-                    }\`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </nav>
+          // Main Hero
+          e('main', { className: 'relative z-10 max-w-7xl mx-auto px-6 py-12 md:py-20' },
+            e('div', { className: 'text-center max-w-3xl mx-auto space-y-6' },
+              e('div', { className: 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono' },
+                e(window.Zap, { className: 'w-3.5 h-3.5 animate-pulse' }),
+                e('span', null, '2026 HIGH-TECH CYBERWEAR COLLECTION')
+              ),
+              e('h1', { className: 'text-4xl sm:text-6xl font-black tracking-tight text-white leading-none' },
+                'THE FUTURE OF ', e('br', null),
+                e('span', { className: 'bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500 bg-clip-text text-transparent' }, 'SYNTHETIC LUXURY')
+              ),
+              e('p', { className: 'text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto' },
+                'Constructed from hydrophobic carbon-nanotube weave and programmable RGB bioluminescence. Engineered for high-speed urban dynamics.'
+              ),
+              e('div', { className: 'flex items-center justify-center gap-4 pt-4' },
+                e('button', {
+                  onClick: () => setActiveTab('catalog'),
+                  className: 'px-6 py-3 rounded-xl font-bold text-xs sm:text-sm text-black bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white shadow-[0_0_25px_rgba(0,243,255,0.4)] active:scale-95 transition-all flex items-center gap-2'
+                }, 'EXPLORE DROPS', e(window.ArrowRight, { className: 'w-4 h-4' })),
+                e('button', {
+                  onClick: () => setActiveTab('features'),
+                  className: 'px-6 py-3 rounded-xl font-semibold text-xs sm:text-sm text-slate-200 bg-white/5 hover:bg-white/10 border border-white/15 active:scale-95 transition-all'
+                }, 'TECH SPECS')
+              )
+            ),
 
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsCartOpen(true)}
-                  className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-2 text-xs transition-all relative"
-                >
-                  <ShoppingBag className="w-4 h-4 text-cyan-300" />
-                  <span className="font-medium">Cart</span>
-                  <span className="w-4 h-4 rounded-full bg-cyan-400 text-black text-[10px] font-bold flex items-center justify-center">
-                    {cartCount}
-                  </span>
-                </button>
-              </div>
-            </header>
-
-            {/* Main Hero Section */}
-            <main className="relative z-10 max-w-7xl mx-auto px-6 py-12 md:py-20">
-              <div className="text-center max-w-3xl mx-auto space-y-6">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono">
-                  <Zap className="w-3.5 h-3.5 animate-pulse" />
-                  <span>2026 HIGH-TECH CYBERWEAR COLLECTION</span>
-                </div>
-
-                <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white leading-none">
-                  THE FUTURE OF <br />
-                  <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500 bg-clip-text text-transparent">
-                    SYNTHETIC LUXURY
-                  </span>
-                </h1>
-
-                <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
-                  Constructed from hydrophobic carbon-nanotube weave and programmable RGB bioluminescence. Engineered for high-speed urban dynamics.
-                </p>
-
-                <div className="flex items-center justify-center gap-4 pt-4">
-                  <button
-                    onClick={() => setActivePage('catalog')}
-                    className="px-6 py-3 rounded-xl font-bold text-xs sm:text-sm text-black bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white shadow-[0_0_25px_rgba(0,243,255,0.4)] hover:shadow-[0_0_35px_rgba(0,243,255,0.6)] active:scale-95 transition-all flex items-center gap-2"
-                  >
-                    <span>EXPLORE DROPS</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-
-                  <button
-                    onClick={() => setActivePage('features')}
-                    className="px-6 py-3 rounded-xl font-semibold text-xs sm:text-sm text-slate-200 bg-white/5 hover:bg-white/10 border border-white/15 active:scale-95 transition-all"
-                  >
-                    TECH SPECS
-                  </button>
-                </div>
-              </div>
-
-              {/* Product Grid Showcase */}
-              <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[
-                  { title: 'AURA V-1 Exo-Jacket', price: '$890', badge: 'NEW DROP', category: 'Outerwear' },
-                  { title: 'Nexus Cyber-Trench', price: '$1,240', badge: 'LIMITED', category: 'Techwear' },
-                  { title: 'Krypton Haptic Hoodie', price: '$450', badge: 'POPULAR', category: 'Apparel' }
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="glass-card rounded-2xl p-5 border border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(0,243,255,0.15)] transition-all group"
-                  >
-                    <div className="h-48 rounded-xl bg-gradient-to-br from-slate-900 via-purple-950/40 to-slate-900 border border-white/5 flex items-center justify-center relative overflow-hidden mb-4">
-                      <div className="w-20 h-20 rounded-full bg-cyan-500/20 blur-xl group-hover:scale-150 transition-transform" />
-                      <Box className="w-12 h-12 text-cyan-300 relative z-10" />
-                      <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                        {item.badge}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-mono">{item.category}</span>
-                        <h3 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">{item.title}</h3>
-                      </div>
-                      <span className="text-sm font-mono font-bold text-cyan-400">{item.price}</span>
-                    </div>
-
-                    <button
-                      onClick={() => setCartCount(c => c + 1)}
-                      className="w-full mt-4 py-2.5 rounded-xl bg-white/5 hover:bg-gradient-to-r hover:from-cyan-500 hover:to-purple-600 text-xs font-semibold text-white border border-white/10 hover:border-transparent transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add to Loadout</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </main>
-          </div>
+            // Product Cards Grid
+            e('div', { className: 'mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' },
+              [
+                { title: 'AURA V-1 Exo-Jacket', price: '$890', badge: 'NEW DROP', category: 'Outerwear' },
+                { title: 'Nexus Cyber-Trench', price: '$1,240', badge: 'LIMITED', category: 'Techwear' },
+                { title: 'Krypton Haptic Hoodie', price: '$450', badge: 'POPULAR', category: 'Apparel' }
+              ].map((item, idx) =>
+                e('div', { key: idx, className: 'glass-card rounded-2xl p-5 border border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(0,243,255,0.15)] transition-all group' },
+                  e('div', { className: 'h-48 rounded-xl bg-gradient-to-br from-slate-900 via-purple-950/40 to-slate-900 border border-white/5 flex items-center justify-center relative overflow-hidden mb-4' },
+                    e('div', { className: 'w-20 h-20 rounded-full bg-cyan-500/20 blur-xl group-hover:scale-150 transition-transform' }),
+                    e(window.Box, { className: 'w-12 h-12 text-cyan-300 relative z-10' }),
+                    e('span', { className: 'absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' }, item.badge)
+                  ),
+                  e('div', { className: 'flex items-center justify-between' },
+                    e('div', null,
+                      e('span', { className: 'text-[10px] text-slate-400 font-mono' }, item.category),
+                      e('h3', { className: 'text-sm font-bold text-white group-hover:text-cyan-300 transition-colors' }, item.title)
+                    ),
+                    e('span', { className: 'text-sm font-mono font-bold text-cyan-400' }, item.price)
+                  ),
+                  e('button', {
+                    onClick: () => setCartCount(c => c + 1),
+                    className: 'w-full mt-4 py-2.5 rounded-xl bg-white/5 hover:bg-gradient-to-r hover:from-cyan-500 hover:to-purple-600 text-xs font-semibold text-white border border-white/10 hover:border-transparent transition-all flex items-center justify-center gap-1.5'
+                  }, e(window.Plus, { className: 'w-3.5 h-3.5' }), 'Add to Loadout')
+                )
+              )
+            )
+          )
         );
       };
 
       const root = ReactDOM.createRoot(rootEl);
-      root.render(React.createElement(App));
+      root.render(e(FallbackApp));
       setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
     } catch (e) {
       console.warn('Fallback error:', e);
     }
-  }
-
-  setTimeout(renderLiveShowcase, 1500);
+  };
 `;
 
 /**
- * Builds clean React standalone bundle for Babel execution
+ * Builds clean React standalone bundle for safe Babel execution
  */
 function buildReactHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
   const palette = THEME_PALETTES[theme] || THEME_PALETTES.cyber;
@@ -461,20 +426,18 @@ function buildReactHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
     .replace(/export\s+default\s+/g, 'const AppExport = ');
 
   const mountScript = `
-    try {
-      const rootElement = document.getElementById('root');
-      if (rootElement) {
-        const root = ReactDOM.createRoot(rootElement);
-        if (typeof App !== 'undefined') {
-          root.render(React.createElement(App));
-        } else if (typeof AppExport !== 'undefined') {
-          root.render(React.createElement(AppExport));
-        } else if (typeof FullWebsiteApp !== 'undefined') {
-          root.render(React.createElement(FullWebsiteApp));
-        }
+    const rootElement = document.getElementById('root');
+    if (rootElement) {
+      const root = ReactDOM.createRoot(rootElement);
+      if (typeof App !== 'undefined') {
+        root.render(React.createElement(App));
+      } else if (typeof AppExport !== 'undefined') {
+        root.render(React.createElement(AppExport));
+      } else if (typeof FullWebsiteApp !== 'undefined') {
+        root.render(React.createElement(FullWebsiteApp));
+      } else if (typeof CyberwearApp !== 'undefined') {
+        root.render(React.createElement(CyberwearApp));
       }
-    } catch (mountErr) {
-      console.warn('Mount Notice:', mountErr);
     }
   `;
 
@@ -520,21 +483,40 @@ function buildReactHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
   <div id="root"></div>
 
   ${sfxEnabled ? `<script>${AUDIO_SFX_SCRIPT}</script>` : ''}
+  <script>${LUCIDE_ICONS_SCRIPT}</script>
+  <script>${FALLBACK_SHOWCASE_SCRIPT}</script>
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef, useMemo, useCallback } = React;
-    ${LUCIDE_ICONS_SCRIPT}
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      const { useState, useEffect, useRef, useMemo, useCallback } = React;
+      const codeSrc = ${JSON.stringify(cleanedCode)};
 
-    try {
-      ${cleanedCode}
-      ${mountScript}
-    } catch (err) {
-      console.warn('Execution notice:', err);
-    }
-  </script>
+      try {
+        if (!window.Babel) {
+          window.renderLiveShowcase();
+          return;
+        }
 
-  <script type="text/babel">
-    ${FALLBACK_SHOWCASE_SCRIPT}
+        const transformed = Babel.transform(codeSrc, {
+          presets: ['react']
+        }).code;
+
+        const execScript = document.createElement('script');
+        execScript.textContent = \`
+          try {
+            \${transformed}
+            \${${JSON.stringify(mountScript)}}
+          } catch(err) {
+            console.warn('Execution notice:', err);
+            window.renderLiveShowcase();
+          }
+        \`;
+        document.body.appendChild(execScript);
+      } catch (compileErr) {
+        console.warn('Compilation notice:', compileErr);
+        window.renderLiveShowcase();
+      }
+    });
   </script>
 
   <script>
@@ -565,7 +547,7 @@ function enhanceHtmlBundle(code, theme = 'cyber', sfxEnabled = true) {
   }
 
   // Inject SFX and fallback before closing body
-  const injection = `${sfxEnabled ? `<script>${AUDIO_SFX_SCRIPT}</script>` : ''}<script type="text/babel">${FALLBACK_SHOWCASE_SCRIPT}</script>`;
+  const injection = `${sfxEnabled ? `<script>${AUDIO_SFX_SCRIPT}</script>` : ''}<script>${FALLBACK_SHOWCASE_SCRIPT}</script>`;
   if (html.includes('</body>')) {
     html = html.replace('</body>', `${injection}</body>`);
   } else {
