@@ -34,20 +34,24 @@ export default function WebsitePreviewModal({ isOpen, onClose, htmlCode, title =
   const [copied, setCopied] = useState(false);
   const iframeRef = useRef(null);
 
-  if (!isOpen || !htmlCode) return null;
-
-  // Auto-heal & format the code through the Sanitizer Engine
+  // Auto-heal & format the code through the Sanitizer Engine (called unconditionally)
   const formattedHtml = useMemo(() => {
+    if (!htmlCode) return '';
     return sanitizeAndHealCode(htmlCode, activeTheme, sfxEnabled);
   }, [htmlCode, activeTheme, sfxEnabled]);
 
-  const isReactCode = (
-    htmlCode.includes('import React') ||
-    htmlCode.includes('export default') ||
-    htmlCode.includes('function App') ||
-    htmlCode.includes('const App =') ||
-    htmlCode.includes('useState(')
+  const isReactCode = Boolean(
+    htmlCode && (
+      htmlCode.includes('import React') ||
+      htmlCode.includes('export default') ||
+      htmlCode.includes('function App') ||
+      htmlCode.includes('const App =') ||
+      htmlCode.includes('useState(')
+    )
   );
+
+  // Guard after ALL hooks have been registered
+  if (!isOpen || !htmlCode) return null;
 
   // Single HTML Export
   const handleDownloadHtml = () => {
