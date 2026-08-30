@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Background3D from './components/Background3D.jsx';
 import Header from './components/Header.jsx';
 import Sidebar from './components/Sidebar.jsx';
@@ -13,7 +13,6 @@ import {
   removeChatThread,
   getSystemHealth,
 } from './services/api.js';
-import gsap from 'gsap';
 
 export default function App() {
   const [messages, setMessages] = useState([]);

@@ -79,7 +79,7 @@ export default function PromptInput({
       <div className="flex items-center justify-between gap-2 mb-2.5 px-2 overflow-x-auto text-[11px]">
         <div className="flex items-center gap-1.5 text-slate-400">
           <span className="font-semibold text-slate-300">Website Prompts:</span>
-          {['any', 'SaaS Landing Page', 'E-Commerce Store', '3D Portfolio', 'Analytics Dashboard', 'Full Website'].map((cat) => (
+          {['any', 'Multi-Page SaaS', '3D E-Commerce', 'Creative Agency', 'Fintech App', 'Full Web Suite'].map((cat) => (
             <button
               key={cat}
               onClick={() => {
@@ -93,7 +93,7 @@ export default function PromptInput({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              {cat === 'any' ? '✨ Spark Website' : cat}
+              {cat === 'any' ? '✨ Spark Full Site' : cat}
             </button>
           ))}
         </div>

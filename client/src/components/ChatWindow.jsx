@@ -36,26 +36,26 @@ export default function ChatWindow({
   const presetCards = [
     {
       icon: Terminal,
-      title: 'SaaS AI Landing Page',
-      desc: 'Create dark glassmorphic landing page with pricing & hero CTA.',
-      prompt: 'Create a complete, responsive dark glassmorphism SaaS landing page for an AI agent platform with animated hero CTA, feature grid cards, interactive pricing tiers, and testimonial slider using HTML5 and Tailwind CSS.',
+      title: 'Full-Stack SaaS Web App',
+      desc: 'Complete multi-page app with Home, Features, Pricing & Contact.',
+      prompt: 'Build a complete, production-grade multi-page SaaS web application with working navigation (Home, Features, Pricing with monthly/annual toggle, Dashboard Preview, and Contact Modal) using React, Tailwind CSS, 3D WebGL physics, and Glassmorphism.',
     },
     {
       icon: Sparkles,
-      title: '3D Glass Portfolio',
-      desc: 'Build creative portfolio with glowing skill badges and projects.',
-      prompt: 'Build a full creative developer portfolio website with dark glassmorphism, glowing skill cards, interactive project filter pills, and contact form in Tailwind CSS.',
+      title: 'Creative Agency Portal',
+      desc: 'Multi-page studio with 3D Showreel, Case Studies & Booking.',
+      prompt: 'Architect a full creative design studio website with multi-page client routing (Home Hero, Interactive Services Matrix, Case Study Portfolio with filter tabs, Team Grid, and Client Booking Modal) in dark glassmorphism.',
     },
     {
       icon: Lightbulb,
-      title: 'E-Commerce Storefront',
-      desc: 'Interactive sneaker showcase with 3D card tilt & cart drawer.',
-      prompt: 'Design a high-end luxury e-commerce product showcase website with sticky glass navigation, 3D product preview cards, customer rating badges, and slide-over cart drawer using Tailwind CSS.',
+      title: '3D E-Commerce Storefront',
+      desc: 'Multi-view store with Catalog, 3D Product Modal & Cart Drawer.',
+      prompt: 'Create a complete luxury e-commerce web application featuring multi-view navigation (Hero Storefront, Filterable Product Catalog, 3D Product Detail Modal, Slide-over Cart Drawer with subtotal calculation, and Checkout Form) in Tailwind CSS.',
     },
     {
       icon: Zap,
-      title: 'Generate Website Spark',
-      desc: 'Click to forge a brand new website prompt via Gemini AI.',
+      title: 'Generate Full Site Spark',
+      desc: 'Click to forge a brand new multi-page website prompt.',
       isGenerator: true,
     },
   ];
