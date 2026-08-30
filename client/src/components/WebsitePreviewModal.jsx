@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   X,
   Monitor,
@@ -14,171 +14,64 @@ import {
   Check,
   Globe,
   Layers,
-  Compass
+  Compass,
+  Volume2,
+  VolumeX,
+  Palette,
+  FolderArchive,
+  FileCode
 } from 'lucide-react';
+import { sanitizeAndHealCode, THEME_PALETTES } from '../services/codeSanitizer.js';
+import { exportReactProjectZip } from '../services/projectPackager.js';
 
 export default function WebsitePreviewModal({ isOpen, onClose, htmlCode, title = "Multi-Page Website Studio" }) {
   const [viewport, setViewport] = useState('desktop'); // 'desktop' | 'tablet' | 'mobile'
   const [viewMode, setViewMode] = useState('preview'); // 'preview' | 'code' | 'split'
+  const [activeTheme, setActiveTheme] = useState('cyber');
+  const [sfxEnabled, setSfxEnabled] = useState(true);
+  const [isExportingZip, setIsExportingZip] = useState(false);
   const [key, setKey] = useState(0);
   const [copied, setCopied] = useState(false);
   const iframeRef = useRef(null);
 
   if (!isOpen || !htmlCode) return null;
 
-  // Intelligent detection: React JSX vs HTML5
+  // Auto-heal & format the code through the Sanitizer Engine
+  const formattedHtml = useMemo(() => {
+    return sanitizeAndHealCode(htmlCode, activeTheme, sfxEnabled);
+  }, [htmlCode, activeTheme, sfxEnabled]);
+
   const isReactCode = (
     htmlCode.includes('import React') ||
     htmlCode.includes('export default') ||
     htmlCode.includes('function App') ||
     htmlCode.includes('const App =') ||
-    htmlCode.includes('useState(') ||
-    htmlCode.includes('useEffect(')
+    htmlCode.includes('useState(')
   );
 
-  let formattedHtml = '';
-
-  if (isReactCode) {
-    // Strip ES module imports/exports for in-browser Babel Standalone execution
-    let cleanedReactCode = htmlCode
-      .replace(/import\s+React\s*,?\s*\{?[^}]*\}?\s*from\s*['"][^'"]+['"];?/g, '')
-      .replace(/import\s+[^;]+from\s*['"][^'"]+['"];?/g, '')
-      .replace(/export\s+default\s+function\s+/g, 'function ')
-      .replace(/export\s+default\s+/g, 'const AppExport = ');
-
-    // Ensure App is mounted
-    const mountScript = `
-      const rootElement = document.getElementById('root');
-      if (rootElement && typeof App !== 'undefined') {
-        const root = ReactDOM.createRoot(rootElement);
-        root.render(React.createElement(App));
-      } else if (rootElement && typeof AppExport !== 'undefined') {
-        const root = ReactDOM.createRoot(rootElement);
-        root.render(React.createElement(AppExport));
-      }
-    `;
-
-    formattedHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>React 3D & GSAP Live Multi-Page Website</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- React 18 & ReactDOM 18 -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <!-- Babel Standalone for JSX compilation -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- GSAP & ScrollTrigger -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <!-- Three.js 3D Engine -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- FontAwesome -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background-color: #06080c; color: #f8fafc; margin: 0; }
-    .glass-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.1); }
-    .glass-panel { background: rgba(13,17,27,0.75); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.12); }
-  </style>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen overflow-x-hidden">
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useRef, useMemo, useCallback } = React;
-    
-    // Lucide Icon proxy to ensure AI-generated React icons render seamlessly
-    const createIcon = (name) => (props = {}) => {
-      const kebab = name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-      return React.createElement('i', {
-        'data-lucide': kebab,
-        className: props.className || 'w-5 h-5 inline-block',
-        style: props.style,
-        onClick: props.onClick
-      });
-    };
-
-    [
-      'Sparkles', 'Zap', 'Check', 'CheckCircle', 'CheckCircle2', 'Star', 'ArrowRight', 'ArrowLeft',
-      'Shield', 'ShieldCheck', 'Heart', 'User', 'Search', 'Menu', 'X', 'ChevronRight',
-      'ChevronLeft', 'ChevronDown', 'Play', 'Code', 'Code2', 'Layers', 'Globe',
-      'Cpu', 'Database', 'Copy', 'ExternalLink', 'Send', 'Terminal', 'Wand2',
-      'RefreshCw', 'Smartphone', 'Monitor', 'Tablet', 'Download', 'MessageSquare',
-      'Plus', 'Trash2', 'HelpCircle', 'Flame', 'Activity', 'BarChart3', 'TrendingUp',
-      'Lock', 'Mail', 'Phone', 'MapPin', 'Moon', 'Sun', 'Clock', 'Calendar', 'Github', 'Twitter'
-    ].forEach((name) => {
-      window[name] = createIcon(name);
-    });
-
-    ${cleanedReactCode}
-    ${mountScript}
-  </script>
-  <script>
-    const triggerIcons = () => { if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons(); };
-    setTimeout(triggerIcons, 100);
-    setTimeout(triggerIcons, 400);
-    setTimeout(triggerIcons, 1000);
-  </script>
-</body>
-</html>`;
-  } else if (!htmlCode.includes('<html') && !htmlCode.includes('<!DOCTYPE')) {
-    formattedHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live Multi-Page Preview</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- GSAP -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <!-- Three.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <!-- Lucide Icons & FontAwesome -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background-color: #06080c; color: #f8fafc; margin: 0; }
-    .glass-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.1); }
-    .glass-panel { background: rgba(13,17,27,0.75); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.12); }
-  </style>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen overflow-x-hidden">
-  ${htmlCode}
-  <script>
-    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 300);
-  </script>
-</body>
-</html>`;
-  } else {
-    formattedHtml = htmlCode;
-    if (!formattedHtml.includes('tailwindcss.com')) {
-      formattedHtml = formattedHtml.replace('<head>', '<head><script src="https://cdn.tailwindcss.com"></script>');
-    }
-    if (!formattedHtml.includes('gsap.min.js')) {
-      formattedHtml = formattedHtml.replace('<head>', '<head><script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>');
-    }
-    if (!formattedHtml.includes('three.min.js')) {
-      formattedHtml = formattedHtml.replace('<head>', '<head><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>');
-    }
-    if (!formattedHtml.includes('lucide@latest')) {
-      formattedHtml = formattedHtml.replace('<head>', '<head><script src="https://unpkg.com/lucide@latest"></script>');
-    }
-  }
-
-  const handleDownload = () => {
+  // Single HTML Export
+  const handleDownloadHtml = () => {
     const blob = new Blob([formattedHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'full-website-application.html';
+    a.download = 'website-application.html';
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  // Full React Vite ZIP Project Export
+  const handleExportReactZip = async () => {
+    try {
+      setIsExportingZip(true);
+      await exportReactProjectZip(htmlCode, 'ai-web-application');
+    } catch (err) {
+      console.error('ZIP Export Error:', err);
+    } finally {
+      setIsExportingZip(false);
+    }
   };
 
   const handleCopyCode = () => {
@@ -205,7 +98,8 @@ export default function WebsitePreviewModal({ isOpen, onClose, htmlCode, title =
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-6 bg-black/85 backdrop-blur-2xl">
       <div className="glass-panel w-full h-[96vh] rounded-3xl border border-white/20 shadow-2xl flex flex-col overflow-hidden">
         {/* Top Header Control Bar */}
-        <div className="px-4 md:px-6 py-3 bg-black/50 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+        <div className="px-4 md:px-6 py-3 bg-black/60 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+          {/* Brand / Title */}
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 p-[1px] shadow-spark-glow">
               <div className="w-full h-full bg-gemini-darker rounded-[11px] flex items-center justify-center">
@@ -216,16 +110,16 @@ export default function WebsitePreviewModal({ isOpen, onClose, htmlCode, title =
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <span>{title}</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  Multi-Page Interactive
+                  Auto-Healed Live Sandbox
                 </span>
               </h3>
-              <p className="text-[11px] text-slate-400 hidden sm:block">Full React & Tailwind CSS DOM Sandbox</p>
+              <p className="text-[11px] text-slate-400 hidden sm:block">Full React & Tailwind CSS DOM Simulation</p>
             </div>
           </div>
 
-          {/* Center: View Mode (Preview vs Code vs Split) & Viewport Switches */}
+          {/* Center Controls: View Mode & Viewports & Themes */}
           <div className="flex items-center gap-2">
-            {/* View Mode Toggle */}
+            {/* View Mode Toggle (Preview vs Code vs Split) */}
             <div className="flex items-center gap-1 glass-card p-1 rounded-xl border border-white/10 text-xs">
               <button
                 onClick={() => setViewMode('preview')}
@@ -262,7 +156,40 @@ export default function WebsitePreviewModal({ isOpen, onClose, htmlCode, title =
               </button>
             </div>
 
-            {/* Viewport Switcher (Preview Mode) */}
+            {/* Theme Palette Switcher */}
+            <div className="hidden lg:flex items-center gap-1 glass-card p-1 rounded-xl border border-white/10">
+              {Object.entries(THEME_PALETTES).map(([keyName, pal]) => (
+                <button
+                  key={keyName}
+                  onClick={() => {
+                    setActiveTheme(keyName);
+                    setKey((k) => k + 1);
+                  }}
+                  title={pal.name}
+                  className={`w-5 h-5 rounded-full transition-transform ${
+                    activeTheme === keyName ? 'scale-125 ring-2 ring-white/60' : 'opacity-60 hover:opacity-100'
+                  }`}
+                  style={{ backgroundColor: pal.primary }}
+                />
+              ))}
+            </div>
+
+            {/* SFX Sound Toggle */}
+            <button
+              onClick={() => {
+                setSfxEnabled(!sfxEnabled);
+                setKey((k) => k + 1);
+              }}
+              className={`p-1.5 rounded-xl border transition-all text-xs flex items-center gap-1 ${
+                sfxEnabled ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : 'text-slate-400 border-white/10'
+              }`}
+              title={sfxEnabled ? 'SFX Audio Enabled' : 'SFX Audio Muted'}
+            >
+              {sfxEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              <span className="hidden xl:inline text-[11px]">{sfxEnabled ? 'SFX ON' : 'SFX OFF'}</span>
+            </button>
+
+            {/* Viewport Switcher */}
             {viewMode !== 'code' && (
               <div className="flex items-center gap-1 glass-card p-1 rounded-xl border border-white/10">
                 <button
@@ -305,7 +232,7 @@ export default function WebsitePreviewModal({ isOpen, onClose, htmlCode, title =
             )}
           </div>
 
-          {/* Right Actions & Close */}
+          {/* Right Action Buttons */}
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setKey((k) => k + 1)}
@@ -328,14 +255,28 @@ export default function WebsitePreviewModal({ isOpen, onClose, htmlCode, title =
             >
               <ExternalLink className="w-4 h-4" />
             </button>
+
+            {/* Export HTML */}
             <button
-              onClick={handleDownload}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 shadow-md shadow-purple-500/20 flex items-center gap-1.5 transition-all active:scale-95"
-              title="Download Standalone HTML Package"
+              onClick={handleDownloadHtml}
+              className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1.5 transition-all"
+              title="Download Single HTML Package"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Export Site</span>
+              <FileCode className="w-3.5 h-3.5 text-cyan-300" />
+              <span className="hidden sm:inline">HTML</span>
             </button>
+
+            {/* Export React ZIP Project */}
+            <button
+              onClick={handleExportReactZip}
+              disabled={isExportingZip}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 shadow-md shadow-purple-500/20 flex items-center gap-1.5 transition-all active:scale-95"
+              title="Download Complete React 18 + Vite + Tailwind Project ZIP"
+            >
+              <FolderArchive className="w-3.5 h-3.5" />
+              <span>{isExportingZip ? 'Packing ZIP...' : 'Export React ZIP'}</span>
+            </button>
+
             <div className="w-[1px] h-5 bg-white/10 mx-1" />
             <button
               onClick={onClose}
