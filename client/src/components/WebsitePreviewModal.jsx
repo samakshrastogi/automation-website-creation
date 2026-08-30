@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Monitor,
@@ -97,8 +98,8 @@ export default function WebsitePreviewModal({ isOpen, onClose, htmlCode, title =
     mobile: 'w-[390px] max-w-full',
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/90 backdrop-blur-2xl overflow-hidden">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/90 backdrop-blur-2xl overflow-hidden">
       <div 
         className="w-full h-full max-h-[96vh] rounded-3xl border border-white/20 shadow-2xl flex flex-col overflow-hidden bg-slate-950/95"
       >
@@ -342,6 +343,7 @@ export default function WebsitePreviewModal({ isOpen, onClose, htmlCode, title =
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

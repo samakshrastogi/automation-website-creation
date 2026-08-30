@@ -45,12 +45,42 @@ function autoRepairTruncatedCode(code, isHtmlDoc) {
   let healed = code.trim();
 
   if (isHtmlDoc) {
-    // If the HTML document contains an unclosed <script type="text/babel"> or <script>
-    if (healed.includes('<script') && !healed.includes('</script>')) {
+    // If the HTML document contains a <script type="text/babel">
+    if (healed.includes('<script type="text/babel"') || healed.includes("<script type='text/babel'")) {
+      const scriptStartIdx = healed.lastIndexOf('<script');
+      const scriptTagEndIdx = healed.indexOf('>', scriptStartIdx);
+      
+      if (scriptTagEndIdx !== -1) {
+        let scriptOpen = healed.slice(scriptStartIdx, scriptTagEndIdx + 1);
+        let scriptBody = healed.slice(scriptTagEndIdx + 1);
+        
+        // Remove trailing </script> or incomplete closure if present
+        if (scriptBody.includes('</script>')) {
+          scriptBody = scriptBody.slice(0, scriptBody.indexOf('</script>'));
+        }
+
+        // Heal the script body
+        scriptBody = healJsSnippet(scriptBody);
+
+        // Ensure ReactDOM.createRoot is called if not already present
+        if (!scriptBody.includes('createRoot') && !scriptBody.includes('ReactDOM.render')) {
+          scriptBody += `
+            try {
+              const rootEl = document.getElementById('root');
+              if (rootEl) {
+                const root = ReactDOM.createRoot(rootEl);
+                if (typeof App !== 'undefined') root.render(React.createElement(App));
+                else if (typeof FullWebsiteApp !== 'undefined') root.render(React.createElement(FullWebsiteApp));
+              }
+            } catch (e) { console.error('AutoMount Error:', e); }
+          `;
+        }
+
+        healed = healed.slice(0, scriptStartIdx) + scriptOpen + '\n' + LUCIDE_ICONS_SCRIPT + '\n' + scriptBody + '\n    </script>';
+      }
+    } else if (healed.includes('<script') && !healed.includes('</script>')) {
       const lastScriptOpen = healed.lastIndexOf('<script');
       let scriptContent = healed.slice(lastScriptOpen);
-
-      // Heal the script content specifically
       scriptContent = healJsSnippet(scriptContent);
       healed = healed.slice(0, lastScriptOpen) + scriptContent + '\n    </script>';
     }
@@ -90,7 +120,6 @@ function healJsSnippet(jsCode) {
 
   // 2. Clean dangling trailing operators or parameter definitions
   if (lastLine.endsWith(',')) {
-    // e.g. "const addToCart = (product," or "id: 'drops',"
     if (lastLine.includes('(') && !lastLine.includes(')')) {
       cleaned = cleaned.slice(0, cleaned.lastIndexOf(',')) + ') => {};';
     } else {
