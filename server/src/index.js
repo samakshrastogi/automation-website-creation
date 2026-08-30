@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 import chatRoutes from './routes/chatRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +24,7 @@ app.use(morgan('dev'));
 
 // API Routes
 app.use('/api', chatRoutes);
+app.use('/api/auth', authRoutes);
 
 // System Health Endpoint
 app.get('/api/health', (req, res) => {

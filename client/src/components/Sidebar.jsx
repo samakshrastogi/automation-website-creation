@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, MessageSquare, Trash2, PanelLeftClose, Sparkles } from 'lucide-react';
+import { Plus, MessageSquare, Trash2, PanelLeftClose, Github } from 'lucide-react';
 
 export default function Sidebar({
   isOpen,
@@ -9,6 +9,8 @@ export default function Sidebar({
   onSelectChat,
   onNewChat,
   onDeleteChat,
+  githubUser,
+  onOpenGitHub,
 }) {
   return (
     <>
@@ -111,6 +113,42 @@ export default function Sidebar({
                 );
               })
             )}
+          </div>
+
+          {/* GitHub Connection Footer */}
+          <div className="p-3 border-t border-white/10 shrink-0">
+            <button
+              onClick={onOpenGitHub}
+              className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs font-medium ${
+                githubUser
+                  ? 'glass-card border-emerald-500/30 text-emerald-300 hover:border-emerald-500/50'
+                  : 'glass-card border-white/10 text-slate-300 hover:text-white hover:border-cyan-500/30 hover:bg-white/5'
+              }`}
+              title={githubUser ? `Connected to GitHub as @${githubUser.login}` : 'Connect GitHub Account'}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                {githubUser ? (
+                  <img
+                    src={githubUser.avatarUrl}
+                    alt={githubUser.login}
+                    className="w-5 h-5 rounded-full border border-white/20 shrink-0"
+                  />
+                ) : (
+                  <Github className="w-4 h-4 text-slate-400 shrink-0" />
+                )}
+                <span className="truncate font-mono">
+                  {githubUser ? `@${githubUser.login}` : 'Connect GitHub'}
+                </span>
+              </div>
+
+              {githubUser ? (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_6px_#10b981]" />
+              ) : (
+                <span className="text-[10px] text-cyan-300 font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">
+                  Link
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </aside>

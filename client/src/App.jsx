@@ -4,7 +4,7 @@ import Header from './components/Header.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import ChatWindow from './components/ChatWindow.jsx';
 import PromptInput from './components/PromptInput.jsx';
-import FeaturesModal from './components/FeaturesModal.jsx';
+import GitHubConnectModal from './components/GitHubConnectModal.jsx';
 import {
   sendChatMessage,
   requestPromptIdea,
@@ -13,6 +13,7 @@ import {
   removeChatThread,
   getSystemHealth,
 } from './services/api.js';
+import { getStoredGitHubUser } from './services/githubService.js';
 
 export default function App() {
   const [messages, setMessages] = useState([]);
@@ -24,7 +25,8 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
   const [selectedModel, setSelectedModel] = useState('gemini-3.6-flash');
   const [health, setHealth] = useState(null);
-  const [featuresOpen, setFeaturesOpen] = useState(false);
+  const [githubUser, setGithubUser] = useState(getStoredGitHubUser());
+  const [githubModalOpen, setGithubModalOpen] = useState(false);
 
   // Initial load: Fetch chat history & system health
   useEffect(() => {
@@ -60,22 +62,22 @@ export default function App() {
     try {
       const data = await getChatDetails(chatId);
       if (data && data.chat) {
-        setCurrentChatId(chatId);
+        setCurrentChatId(data.chat._id);
         setMessages(data.chat.messages || []);
       }
     } catch (err) {
-      console.error('Failed to switch chat:', err);
+      console.error('Failed to load chat conversation:', err);
     }
   };
 
-  // Start new chat
+  // Create clean new chat
   const handleNewChat = () => {
     setCurrentChatId(null);
     setMessages([]);
     setInputPrompt('');
   };
 
-  // Delete chat
+  // Delete chat thread
   const handleDeleteChat = async (chatId) => {
     try {
       await removeChatThread(chatId);
@@ -88,94 +90,66 @@ export default function App() {
     }
   };
 
-  // Send Message to Gemini API
+  // Send message or prompt to backend
   const handleSendMessage = async () => {
-    const userPrompt = inputPrompt.trim();
-    if (!userPrompt || isGenerating) return;
+    if (!inputPrompt.trim() || isGenerating) return;
 
-    // 1. Append user message immediately
-    const userMessage = {
-      role: 'user',
-      content: userPrompt,
-      timestamp: new Date().toISOString(),
-    };
-
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    const userText = inputPrompt.trim();
     setInputPrompt('');
     setIsGenerating(true);
 
+    // Optimistically add user's message
+    const tempUserMsg = {
+      role: 'user',
+      content: userText,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, tempUserMsg]);
+
     try {
-      // 2. Call backend
-      const result = await sendChatMessage({
-        message: userPrompt,
+      const data = await sendChatMessage({
         chatId: currentChatId,
+        message: userText,
         model: selectedModel,
-        history: messages,
       });
 
-      // 3. Append model response
-      if (result && result.response) {
-        const modelMessage = {
-          role: 'model',
-          content: result.response,
-          model: result.model || selectedModel,
-          timestamp: result.timestamp || new Date().toISOString(),
-        };
-        setMessages([...newMessages, modelMessage]);
-
-        if (result.chatId) {
-          setCurrentChatId(result.chatId);
+      if (data && data.assistantMessage) {
+        setMessages((prev) => [...prev, data.assistantMessage]);
+        if (data.chatId) {
+          setCurrentChatId(data.chatId);
+          loadChats(); // Refresh sidebar list
         }
-        // Refresh sidebar chat list
-        loadChats();
       }
-    } catch (error) {
-      console.error('Chat error:', error);
-      const errorMessage = {
-        role: 'model',
-        content: `⚠️ **Error Processing Request:** ${error.message || 'Unable to connect to server.'}\n\nPlease verify that the backend server is running on \`http://localhost:5000\`.`,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages([...newMessages, errorMessage]);
+    } catch (err) {
+      console.error('Failed to generate response:', err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: '⚠️ Failed to connect to server. Please ensure the backend server is running.',
+          timestamp: new Date().toISOString(),
+        },
+      ]);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Dynamic Prompt Ideation generator (When clicking "Generate Prompt" or category spark)
+  // Generate dynamic prompt idea via Gemini
   const handleGeneratePromptIdea = async (category = 'any') => {
-    setIsGeneratingPrompt(true);
     try {
+      setIsGeneratingPrompt(true);
       const data = await requestPromptIdea(category);
       if (data && data.prompt) {
-        // Animate prompt typing into input
-        setInputPrompt('');
-        let currentText = '';
-        const targetText = data.prompt;
-        
-        let i = 0;
-        const interval = setInterval(() => {
-          if (i < targetText.length) {
-            currentText += targetText[i];
-            setInputPrompt(currentText);
-            i++;
-          } else {
-            clearInterval(interval);
-          }
-        }, 12);
-
+        setInputPrompt(data.prompt);
         return data.prompt;
       }
     } catch (err) {
-      console.error('Prompt ideation error:', err);
-      // Fallback prompt
-      const fallback = "Architect a resilient real-time AI dashboard with React 19, Three.js 3D shaders, and MongoDB.";
-      setInputPrompt(fallback);
-      return fallback;
+      console.error('Failed to generate prompt idea:', err);
     } finally {
       setIsGeneratingPrompt(false);
     }
+    return null;
   };
 
   return (
@@ -192,6 +166,8 @@ export default function App() {
         onSelectChat={handleSelectChat}
         onNewChat={handleNewChat}
         onDeleteChat={handleDeleteChat}
+        githubUser={githubUser}
+        onOpenGitHub={() => setGithubModalOpen(true)}
       />
 
       {/* Main Chat Interface */}
@@ -202,6 +178,8 @@ export default function App() {
           setSidebarOpen={setSidebarOpen}
           selectedModel={selectedModel}
           setSelectedModel={setSelectedModel}
+          githubUser={githubUser}
+          onOpenGitHub={() => setGithubModalOpen(true)}
         />
 
         {/* Scrollable Chat View */}
@@ -222,6 +200,14 @@ export default function App() {
           isGeneratingPrompt={isGeneratingPrompt}
         />
       </div>
+
+      {/* GitHub Account Connect Modal */}
+      <GitHubConnectModal
+        isOpen={githubModalOpen}
+        onClose={() => setGithubModalOpen(false)}
+        githubUser={githubUser}
+        onUserUpdate={setGithubUser}
+      />
     </div>
   );
 }

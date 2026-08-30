@@ -3,14 +3,22 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
   Sparkles,
-  User,
+  Download,
   Copy,
   Check,
+  Code2,
+  ExternalLink,
+  RefreshCw,
+  User,
+  Bot,
   Eye,
   FolderArchive,
-  Download
+  Layers,
+  FileCode,
+  Github
 } from 'lucide-react';
 import WebsitePreviewModal from './WebsitePreviewModal.jsx';
+import PushToGitHubModal from './PushToGitHubModal.jsx';
 import { exportReactProjectZip } from '../services/projectPackager.js';
 
 export default function ChatMessage({ message, isLast }) {
@@ -18,6 +26,7 @@ export default function ChatMessage({ message, isLast }) {
   const [copied, setCopied] = useState(false);
   const [previewHtml, setPreviewHtml] = useState(null);
   const [isExportingZip, setIsExportingZip] = useState(false);
+  const [pushGithubOpen, setPushGithubOpen] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -240,8 +249,18 @@ export default function ChatMessage({ message, isLast }) {
                       </div>
                     </div>
 
-                    {/* Right: Dual Action Buttons */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    {/* Right: Action Buttons */}
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                      {/* 1-Click Push to GitHub */}
+                      <button
+                        onClick={() => setPushGithubOpen(true)}
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900/90 hover:bg-slate-800 border border-white/15 hover:border-cyan-400/50 shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
+                        title="Push project directly to your GitHub repository"
+                      >
+                        <Github className="w-3.5 h-3.5 text-cyan-300" />
+                        <span>Push to GitHub</span>
+                      </button>
+
                       {/* 1-Click ZIP Download */}
                       <button
                         onClick={handleDownloadProjectZip}
@@ -286,6 +305,14 @@ export default function ChatMessage({ message, isLast }) {
         onClose={() => setPreviewHtml(null)}
         htmlCode={previewHtml}
         title="Project Preview"
+      />
+
+      {/* Push to GitHub Modal */}
+      <PushToGitHubModal
+        isOpen={pushGithubOpen}
+        onClose={() => setPushGithubOpen(false)}
+        rawCode={getPrimaryCode()}
+        defaultRepoName="nexusforge-app"
       />
     </>
   );
